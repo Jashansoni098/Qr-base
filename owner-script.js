@@ -172,17 +172,44 @@ function loadMenu(uid) {
 }
 
 // --- 8. QR Generation ---
-function generateQRCode(uid) {
+// --- Final QR Generation Function for Platto.netlify.app ---
+window.generateQRCode = (uid) => {
     const qrDiv = document.getElementById("qrcode-display");
+    
+    // 1. Purana QR saaf karein
     qrDiv.innerHTML = "";
-    // User website ka link (Change it after hosting)
-   const liveUserUrl = "https://platto.netlify.app/index.html"; 
+
+    // 2. Aapka asli Live URL (Jo aapne bheja hai)
+    const liveUserUrl = "https://platto.netlify.app/index.html"; 
+
+    // 3. Final URL: Isme Restaurant ID (?resId=...) aur Table Number (&table=1) jod rahe hain
+    const finalUrl = `${liveUserUrl}?resId=${uid}&table=1`;
+
+    console.log("QR Code is pointing to:", finalUrl);
+
+    // 4. Generate QR Code using QRCode.js library
     new QRCode(qrDiv, {
-        text: userUrl,
-        width: 180,
-        height: 180
+        text: finalUrl,
+        width: 200,
+        height: 200,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
     });
-}
+};
+
+// QR Download function
+window.downloadQR = () => {
+    const qrImg = document.querySelector("#qrcode-display img");
+    if (qrImg) {
+        const link = document.createElement("a");
+        link.href = qrImg.src;
+        link.download = "Platto_Restaurant_QR.png";
+        link.click();
+    } else {
+        alert("Pehle QR code generate hone dein!");
+    }
+};
 
 window.downloadQR = () => {
     const img = document.querySelector("#qrcode-display img");
