@@ -176,7 +176,7 @@ function generateQRCode(uid) {
     const qrDiv = document.getElementById("qrcode-display");
     qrDiv.innerHTML = "";
     // User website ka link (Change it after hosting)
-    const userUrl = `https://platto-user.netlify.app/index.html?resId=${uid}`;
+   const liveUserUrl = "https://platto.netlify.app/index.html"; 
     new QRCode(qrDiv, {
         text: userUrl,
         width: 180,
