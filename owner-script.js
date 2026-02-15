@@ -180,7 +180,7 @@ window.generateQRCode = (uid) => {
     qrDiv.innerHTML = "";
 
     // 2. Aapka asli Live URL (Jo aapne bheja hai)
-    const liveUserUrl = "https://platto.netlify.app/index.html"; 
+    const liveUserUrl = "https://platto.netlify.app/user.html"; 
 
     // 3. Final URL: Isme Restaurant ID (?resId=...) aur Table Number (&table=1) jod rahe hain
     const finalUrl = `${liveUserUrl}?resId=${uid}&table=1`;
