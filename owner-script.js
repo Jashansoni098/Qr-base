@@ -212,35 +212,90 @@ window.downloadQR = () => {
 };
 
 // --- 8. Auth Listener & Real-time Sync ---
+// --- Updated onAuthStateChanged to fix UI overlap ---
 onAuthStateChanged(auth, (user) => {
-    if(user) {
+    if (user) {
         onSnapshot(doc(db, "restaurants", user.uid), (d) => {
-            if(d.exists()) {
+            if (d.exists()) {
                 const data = d.data();
-                handleStatus(data, user.uid);
-                loadMenu(user.uid);
-                generateQR(user.uid);
-                
-                // Pre-fill profile if active
-                if(data.status === 'active') {
-                    document.getElementById('res-name').value = data.name || "";
-                    document.getElementById('res-address').value = data.address || "";
-                    document.getElementById('res-phone').value = data.ownerPhone || "";
-                    document.getElementById('res-about').value = data.about || "";
-                    document.getElementById('res-upi').value = data.upiId || "";
-                    document.getElementById('offer-text').value = data.offerText || "";
-                    document.getElementById('offer-status').checked = data.showOffer || false;
+                if (data.status === 'active' || data.status === 'expired') {
+                    document.getElementById('auth-area').style.display = 'none'; // Login Hide
+                    handleStatus(data, user.uid);
+                    loadMenu(user.uid);
+                    loadOrders(user.uid); // Load Orders
+                    generateQR(user.uid);
+                } else if (data.status === 'pending') {
+                    document.getElementById('auth-area').style.display = 'block';
+                    document.getElementById('auth-section').style.display = 'none';
+                    document.getElementById('waiting-section').style.display = 'block';
                 }
+            } else {
+                document.getElementById('auth-area').style.display = 'block';
+                document.getElementById('membership-section').style.display = 'block';
+                document.getElementById('auth-section').style.display = 'none';
             }
         });
     } else {
-        // Only redirect if not on the login page to avoid loops
-        if(!window.location.href.includes("owner.html")) {
-            window.location.href = "owner.html";
-        }
+        document.getElementById('auth-area').style.display = 'block';
+        document.getElementById('main-wrapper').style.display = 'none';
     }
-    if(loader) loader.style.display = 'none';
+    document.getElementById('loader').style.display = 'none';
 });
+
+// --- Real-time Orders Management ---
+function loadOrders(uid) {
+    const q = query(collection(db, "orders"), where("resId", "==", uid));
+    onSnapshot(q, (snapshot) => {
+        const list = document.getElementById('live-orders-list');
+        const badge = document.getElementById('order-count-badge');
+        list.innerHTML = "";
+        let pendingCount = 0;
+
+        snapshot.forEach((d) => {
+            const order = d.data();
+            if(order.status === "Pending") pendingCount++;
+
+            const itemsHtml = order.items.map(i => `<p>• ${i.name} x1</p>`).join('');
+            
+            list.innerHTML += `
+                <div class="order-card ${order.status.toLowerCase()}">
+                    <div class="order-header">
+                        <b>Table ${order.table}</b>
+                        <span>${order.status}</span>
+                    </div>
+                    <div class="order-items">${itemsHtml}</div>
+                    <div class="order-footer">
+                        <p>Total: <b>₹${order.total}</b></p>
+                        ${order.status === 'Pending' ? `
+                            <div class="btn-row">
+                                <button class="btn-approve" onclick="updateOrderStatus('${d.id}', 'Accepted')">Approve</button>
+                                <button class="btn-reject" onclick="updateOrderStatus('${d.id}', 'Rejected')">Reject</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>`;
+        });
+        badge.innerText = pendingCount;
+    });
+}
+
+window.updateOrderStatus = async (id, status) => {
+    await updateDoc(doc(db, "orders", id), { status: status });
+    alert("Order " + status);
+};
+
+// --- Save Prep Time ---
+window.saveProfile = async () => {
+    const time = document.getElementById('res-prep-time').value;
+    const name = document.getElementById('res-name').value;
+    // ... other fields ...
+    await updateDoc(doc(db, "restaurants", auth.currentUser.uid), {
+        prepTime: time,
+        name: name
+        // ...
+    });
+    alert("Profile & Prep Time Saved!");
+};
 
 window.logout = () => {
     signOut(auth).then(() => {

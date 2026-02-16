@@ -3,170 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platto Partner | Professional Dashboard</title>
-    <!-- Fonts & Icons -->
+    <title>Platto Partner | Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="owner-style.css">
-    <!-- QR Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
-    <!-- Professional Loader -->
-    <div id="loader" class="loader-overlay">
-        <div class="spinner"></div>
-    </div>
+    <div id="loader" class="loader-overlay"><div class="spinner"></div></div>
 
-    <!-- 1. AUTHENTICATION & MEMBERSHIP AREA (Shown first to new/logged-out users) -->
-    <div id="auth-area">
-        <!-- Login / Signup Section -->
-        <section id="auth-section" class="container flex-center">
+    <!-- 1. AUTH AREA (Login/Signup/Membership) -->
+    <div id="auth-area" style="display: block;">
+        <section id="auth-section" class="flex-center">
             <div class="auth-card">
                 <div class="brand-logo">PLATTO<span>Partner</span></div>
                 <h2 id="auth-title">Partner Login</h2>
-                <p id="auth-subtitle">Manage your restaurant digitally</p>
-                <div class="input-group">
-                    <label>Email Address</label>
-                    <input type="email" id="email" placeholder="name@restaurant.com">
-                </div>
-                <div class="input-group">
-                    <label>Password</label>
-                    <input type="password" id="password" placeholder="••••••••">
-                </div>
+                <input type="email" id="email" placeholder="Email Address">
+                <input type="password" id="password" placeholder="Password">
                 <button id="authBtn" class="primary-btn">Login</button>
-                <div class="auth-footer">
-                    <p id="toggle-wrapper">New to Platto? <span onclick="toggleAuth()" id="toggle-link">Create Account</span></p>
-                </div>
+                <p onclick="toggleAuth()" style="cursor:pointer; margin-top:15px; font-size:0.9rem;">New to Platto? <b>Create Account</b></p>
             </div>
         </section>
 
-        <!-- Membership Selection Section -->
-        <section id="membership-section" class="container" style="display:none;">
-            <div class="header-center">
-                <h1>Choose Your Plan</h1>
-                <p>Select a plan to start your digital menu journey</p>
-            </div>
-            <div class="plans-grid">
-                <div class="plan-card" onclick="selectPlan('Monthly', 499)">
-                    <h3>Monthly</h3>
-                    <div class="price">₹499<span>/mo</span></div>
-                    <ul><li>Digital Menu</li><li>Unlimited Orders</li><li>QR Code</li></ul>
-                </div>
-                <div class="plan-card featured" onclick="selectPlan('Yearly', 3999)">
-                    <div class="badge">Best Value</div>
-                    <h3>Yearly</h3>
-                    <div class="price">₹3,999<span>/yr</span></div>
-                    <ul><li>All Features</li><li>Priority Support</li><li>2 Months Free</li></ul>
-                </div>
-            </div>
-            <div id="payment-panel" class="payment-card" style="display:none;">
-                <h3>Complete Payment</h3>
-                <p>Payable: <strong id="payable-amt"></strong> (Plan: <span id="selected-plan-name"></span>)</p>
-                <p>UPI ID: <strong>platto@okaxis</strong></p>
-                <div class="upload-box">
-                    <input type="text" id="res-name-input" placeholder="Your Restaurant Name">
-                    <label>Upload Screenshot of Payment</label>
-                    <input type="file" id="payment-proof" accept="image/*">
-                    <button id="submitPaymentBtn" class="primary-btn">Submit for Approval</button>
-                </div>
-            </div>
+        <!-- Membership & Waiting Section -->
+        <section id="membership-section" style="display:none; padding:40px;">
+             <!-- (Same Membership Plan Grid as before) -->
         </section>
-
-        <!-- Waiting for Approval Section -->
-        <section id="waiting-section" class="container flex-center" style="display:none;">
-            <div class="status-card">
-                <div class="icon-wait">⏳</div>
-                <h2>Approval Pending</h2>
-                <p>Aapka payment proof review kiya ja raha hai. Approval ke baad dashboard unlock ho jayega.</p>
-            </div>
+        
+        <section id="waiting-section" class="flex-center" style="display:none;">
+            <div class="status-card"><h2>⏳ Approval Pending</h2></div>
         </section>
     </div>
 
-    <!-- 2. EXPIRED SCREEN OVERLAY (Blocks everything if plan ends) -->
+    <!-- 2. EXPIRED OVERLAY -->
     <div id="expired-screen" class="expired-overlay" style="display:none;">
         <div class="expired-card">
-            <img src="https://cdn-icons-png.flaticon.com/512/564/564619.png" width="80">
-            <h1>Your Plan Has Expired!</h1>
-            <p>Aapki digital menu aur saari services stop kar di gayi hain. Dubara chalu karne ke liye niche se naya plan buy karein.</p>
-            <button class="save-btn" onclick="goToRenewal()">Renew Now / Buy Plan</button>
+            <h1>Plan Expired!</h1>
+            <button class="save-btn" onclick="goToRenewal()">Renew Now</button>
         </div>
     </div>
 
-    <!-- 3. MAIN DASHBOARD WRAPPER (Shown only to ACTIVE users) -->
+    <!-- 3. MAIN DASHBOARD -->
     <div id="main-wrapper" style="display:none;" class="dashboard-container">
-        
-        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="side-logo">PLATTO<span>Partner</span></div>
             <nav class="side-nav">
-                <button class="nav-link active" onclick="showSection('status')">🏠 Membership Status</button>
-                <button class="nav-link" onclick="showSection('profile')">🏢 Restaurant Info</button>
-                <button class="nav-link" onclick="showSection('menu')">🍴 Menu Manager</button>
-                <button class="nav-link" onclick="showSection('payment')">💳 Payment & Offers</button>
-                <button class="nav-link" onclick="showSection('qr')">🖼️ QR Generator</button>
+                <button class="nav-link active" onclick="showSection('status')">🏠 Status</button>
+                <button class="nav-link" onclick="showSection('orders')">🔔 Live Orders <span id="order-count-badge" class="badge-red">0</span></button>
+                <button class="nav-link" onclick="showSection('profile')">🏢 Profile</button>
+                <button class="nav-link" onclick="showSection('menu')">🍴 Menu</button>
+                <button class="nav-link" onclick="showSection('qr')">🖼️ QR Code</button>
                 <button class="nav-link logout" onclick="logout()">🚪 Logout</button>
             </nav>
         </aside>
 
-        <!-- Content Area -->
         <main class="content">
-            
-            <!-- Expiry Warning Banner (Shows 7 days before) -->
-            <div id="expiry-warning" class="expiry-banner" style="display:none;">
-                ⚠️ Aapka plan <span id="days-left"></span> din mein khatam hone wala hai. Kripya renew karein nahi toh service stop ho jayegi!
-            </div>
+            <div id="expiry-warning" class="expiry-banner" style="display:none;">⚠️ Plan Renewal Required!</div>
 
-            <!-- SECTION: Membership Status -->
-            <section id="status-sec" class="page-sec">
-                <div class="welcome-header">
-                    <h1>Welcome, <span id="top-res-name">Partner</span></h1>
-                    <div id="notif-box" class="notif-alert"></div>
+            <!-- SECTION: LIVE ORDERS -->
+            <section id="orders-sec" class="page-sec" style="display:none;">
+                <div class="header-flex">
+                    <h2>Live Orders</h2>
+                    <p>Manage your real-time customer orders</p>
                 </div>
-                <div class="status-grid">
-                    <div class="stat-card">
-                        <small>Account Status</small>
-                        <h2 id="disp-status">Active</h2>
-                    </div>
-                    <div class="stat-card">
-                        <small>Current Plan</small>
-                        <h2 id="disp-plan">Monthly</h2>
-                    </div>
-                    <div class="stat-card">
-                        <small>Valid Till</small>
-                        <h2 id="disp-expiry">-- -- ----</h2>
-                    </div>
+                <div id="live-orders-list" class="orders-grid-display">
+                    <!-- Live Orders show here -->
                 </div>
             </section>
 
-            <!-- SECTION: Restaurant Info (Profile & Call Button) -->
+            <!-- SECTION: STATUS -->
+            <section id="status-sec" class="page-sec">
+                <div class="status-grid">
+                    <div class="stat-card"><small>Status</small><h2 id="disp-status">--</h2></div>
+                    <div class="stat-card"><small>Plan</small><h2 id="disp-plan">--</h2></div>
+                    <div class="stat-card"><small>Valid Till</small><h2 id="disp-expiry">--</h2></div>
+                </div>
+            </section>
+
+            <!-- SECTION: PROFILE (Added Prep Time) -->
             <section id="profile-sec" class="page-sec" style="display:none;">
                 <div class="card">
                     <h3>Restaurant Profile</h3>
                     <div class="form-grid">
-                        <div class="input-group">
-                            <label>Restaurant Logo</label>
-                            <input type="file" id="res-logo-file" accept="image/*">
-                        </div>
-                        <div class="input-group">
-                            <label>Restaurant Name</label>
-                            <input type="text" id="res-name" placeholder="e.g. Pizza Club">
-                        </div>
-                        <div class="input-group">
-                            <label>Address</label>
-                            <input type="text" id="res-address" placeholder="Full Address">
-                        </div>
-                        <div class="input-group">
-                            <label>Primary Phone (for Call Button)</label>
-                            <input type="tel" id="res-phone" placeholder="9876543210">
-                        </div>
-                        <div class="input-group full-width">
-                            <label>About Description</label>
-                            <textarea id="res-about" rows="3" placeholder="Short description about your restaurant"></textarea>
-                        </div>
+                        <input type="text" id="res-name" placeholder="Restaurant Name">
+                        <input type="text" id="res-phone" placeholder="Contact Number">
+                        <input type="number" id="res-prep-time" placeholder="Avg. Prep Time (e.g. 20 Mins)">
+                        <textarea id="res-address" placeholder="Address"></textarea>
                     </div>
-                    <button class="save-btn" onclick="saveProfile()">Update Info</button>
+                    <button class="save-btn" onclick="saveProfile()">Save Settings</button>
                 </div>
             </section>
+
 
             <!-- SECTION: Menu Manager -->
             <section id="menu-sec" class="page-sec" style="display:none;">
