@@ -3,17 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platto Partner | Dashboard</title>
+    <title>Platto Partner | Professional Dashboard</title>
+    <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="owner-style.css">
+    <!-- QR Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
-    <div id="loader" class="loader-overlay"><div class="spinner"></div></div>
+    <!-- Professional Loader -->
+    <div id="loader" class="loader-overlay">
+        <div class="spinner"></div>
+    </div>
 
-    <!-- Sidebar Navigation -->
+    <!-- 1. AUTHENTICATION & MEMBERSHIP AREA (Shown first to new/logged-out users) -->
+    <div id="auth-area">
+        <!-- Login / Signup Section -->
+        <section id="auth-section" class="container flex-center">
+            <div class="auth-card">
+                <div class="brand-logo">PLATTO<span>Partner</span></div>
+                <h2 id="auth-title">Partner Login</h2>
+                <p id="auth-subtitle">Manage your restaurant digitally</p>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="name@restaurant.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="••••••••">
+                </div>
+                <button id="authBtn" class="primary-btn">Login</button>
+                <div class="auth-footer">
+                    <p id="toggle-wrapper">New to Platto? <span onclick="toggleAuth()" id="toggle-link">Create Account</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Membership Selection Section -->
+        <section id="membership-section" class="container" style="display:none;">
+            <div class="header-center">
+                <h1>Choose Your Plan</h1>
+                <p>Select a plan to start your digital menu journey</p>
+            </div>
+            <div class="plans-grid">
+                <div class="plan-card" onclick="selectPlan('Monthly', 499)">
+                    <h3>Monthly</h3>
+                    <div class="price">₹499<span>/mo</span></div>
+                    <ul><li>Digital Menu</li><li>Unlimited Orders</li><li>QR Code</li></ul>
+                </div>
+                <div class="plan-card featured" onclick="selectPlan('Yearly', 3999)">
+                    <div class="badge">Best Value</div>
+                    <h3>Yearly</h3>
+                    <div class="price">₹3,999<span>/yr</span></div>
+                    <ul><li>All Features</li><li>Priority Support</li><li>2 Months Free</li></ul>
+                </div>
+            </div>
+            <div id="payment-panel" class="payment-card" style="display:none;">
+                <h3>Complete Payment</h3>
+                <p>Payable: <strong id="payable-amt"></strong> (Plan: <span id="selected-plan-name"></span>)</p>
+                <p>UPI ID: <strong>platto@okaxis</strong></p>
+                <div class="upload-box">
+                    <input type="text" id="res-name-input" placeholder="Your Restaurant Name">
+                    <label>Upload Screenshot of Payment</label>
+                    <input type="file" id="payment-proof" accept="image/*">
+                    <button id="submitPaymentBtn" class="primary-btn">Submit for Approval</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Waiting for Approval Section -->
+        <section id="waiting-section" class="container flex-center" style="display:none;">
+            <div class="status-card">
+                <div class="icon-wait">⏳</div>
+                <h2>Approval Pending</h2>
+                <p>Aapka payment proof review kiya ja raha hai. Approval ke baad dashboard unlock ho jayega.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- 2. EXPIRED SCREEN OVERLAY (Blocks everything if plan ends) -->
+    <div id="expired-screen" class="expired-overlay" style="display:none;">
+        <div class="expired-card">
+            <img src="https://cdn-icons-png.flaticon.com/512/564/564619.png" width="80">
+            <h1>Your Plan Has Expired!</h1>
+            <p>Aapki digital menu aur saari services stop kar di gayi hain. Dubara chalu karne ke liye niche se naya plan buy karein.</p>
+            <button class="save-btn" onclick="goToRenewal()">Renew Now / Buy Plan</button>
+        </div>
+    </div>
+
+    <!-- 3. MAIN DASHBOARD WRAPPER (Shown only to ACTIVE users) -->
     <div id="main-wrapper" style="display:none;" class="dashboard-container">
+        
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="side-logo">PLATTO<span>Partner</span></div>
             <nav class="side-nav">
@@ -26,8 +108,15 @@
             </nav>
         </aside>
 
+        <!-- Content Area -->
         <main class="content">
-            <!-- 7 & 8: Membership & Notifications -->
+            
+            <!-- Expiry Warning Banner (Shows 7 days before) -->
+            <div id="expiry-warning" class="expiry-banner" style="display:none;">
+                ⚠️ Aapka plan <span id="days-left"></span> din mein khatam hone wala hai. Kripya renew karein nahi toh service stop ho jayegi!
+            </div>
+
+            <!-- SECTION: Membership Status -->
             <section id="status-sec" class="page-sec">
                 <div class="welcome-header">
                     <h1>Welcome, <span id="top-res-name">Partner</span></h1>
@@ -49,7 +138,7 @@
                 </div>
             </section>
 
-            <!-- 1 & 5: Restaurant Info & Call Button -->
+            <!-- SECTION: Restaurant Info (Profile & Call Button) -->
             <section id="profile-sec" class="page-sec" style="display:none;">
                 <div class="card">
                     <h3>Restaurant Profile</h3>
@@ -79,7 +168,7 @@
                 </div>
             </section>
 
-            <!-- 2: Menu Manager -->
+            <!-- SECTION: Menu Manager -->
             <section id="menu-sec" class="page-sec" style="display:none;">
                 <div class="card">
                     <h3>Add New Menu Item</h3>
@@ -91,21 +180,21 @@
                     </div>
                 </div>
                 <div id="owner-menu-list" class="menu-display-grid">
-                    <!-- Menu items will show here -->
+                    <!-- Menu items list injected here -->
                 </div>
             </section>
 
-            <!-- 3 & 4: Payment QR & Offers -->
+            <!-- SECTION: Payment & Offers -->
             <section id="payment-sec" class="page-sec" style="display:none;">
                 <div class="card">
                     <h3>Payment & UPI Settings</h3>
                     <div class="input-group">
-                        <label>Your UPI ID (GPay/PhonePe)</label>
+                        <label>Your UPI ID (GPay/PhonePe/Paytm)</label>
                         <input type="text" id="res-upi" placeholder="example@okaxis">
                     </div>
                     <div class="input-group">
-                        <label>Custom Payment QR (Optional Upload)</label>
-                        <input type="file" id="res-qr-file">
+                        <label>Custom Payment QR Image (Optional)</label>
+                        <input type="file" id="res-qr-file" accept="image/*">
                     </div>
                     <button class="save-btn" onclick="savePaymentInfo()">Save Payment Details</button>
                 </div>
@@ -113,32 +202,30 @@
                 <div class="card" style="margin-top:20px;">
                     <h3>Offers & Discounts</h3>
                     <div class="input-group">
-                        <label>Offer Text</label>
-                        <input type="text" id="offer-text" placeholder="e.g. 20% OFF on all Pizzas">
+                        <label>Offer Text (Customer ko kya dikhega)</label>
+                        <input type="text" id="offer-text" placeholder="e.g. 10% OFF Today!">
                     </div>
-                    <div class="toggle-group">
-                        <label>Show Offer to Customers?</label>
+                    <div class="toggle-group" style="margin: 15px 0;">
+                        <label>Enable Offer?</label>
                         <input type="checkbox" id="offer-status">
                     </div>
                     <button class="save-btn" onclick="saveOffer()">Update Offer</button>
                 </div>
             </section>
 
-            <!-- 6: QR Generator -->
+            <!-- SECTION: QR Generator -->
             <section id="qr-sec" class="page-sec" style="display:none;">
-                <div class="card qr-center">
+                <div class="card qr-center" style="text-align: center;">
                     <h3>Your Digital Menu QR</h3>
-                    <p>Print this and place it on your tables.</p>
-                    <div id="qrcode-box"></div>
+                    <p>Print this and place it on your tables / counter.</p>
+                    <div id="qrcode-box" style="display: flex; justify-content: center; margin: 20px 0;"></div>
                     <button class="save-btn" onclick="downloadQR()">Download QR Code</button>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Initial Auth & Waiting Section (Pehle wala logic) -->
-    <div id="auth-area"> <!-- Same as before --> </div>
-
+    <!-- Script Import -->
     <script type="module" src="owner-script.js"></script>
 </body>
 </html>

@@ -12,7 +12,8 @@ const mainWrapper = document.getElementById('main-wrapper');
 window.showSection = (id) => {
     document.querySelectorAll('.page-sec').forEach(s => s.style.display = 'none');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    document.getElementById(id + '-sec').style.display = 'block';
+    const target = document.getElementById(id + '-sec');
+    if (target) target.style.display = 'block';
     event.currentTarget.classList.add('active');
 };
 
@@ -33,12 +34,12 @@ window.saveProfile = async () => {
             updateData.logoUrl = await getDownloadURL(uploadTask.ref);
         }
         await updateDoc(doc(db, "restaurants", auth.currentUser.uid), updateData);
-        alert("Restaurant Profile Updated!");
-    } catch (e) { alert("Error: " + e.message); }
+        alert("Restaurant Profile Updated Successfully!");
+    } catch (e) { alert("Error updating profile: " + e.message); }
     loader.style.display = 'none';
 };
 
-// --- 3. Payment Details & QR Upload ---
+// --- 3. Payment Details & UPI QR Upload ---
 window.savePaymentInfo = async () => {
     const upi = document.getElementById('res-upi').value;
     const qrFile = document.getElementById('res-qr-file').files[0];
@@ -53,8 +54,8 @@ window.savePaymentInfo = async () => {
             updateData.paymentQrUrl = await getDownloadURL(uploadTask.ref);
         }
         await updateDoc(doc(db, "restaurants", auth.currentUser.uid), updateData);
-        alert("Payment Details Saved!");
-    } catch (e) { alert(e.message); }
+        alert("Payment Details & QR Saved!");
+    } catch (e) { alert("Error saving payment info: " + e.message); }
     loader.style.display = 'none';
 };
 
@@ -67,12 +68,12 @@ window.saveOffer = async () => {
         await updateDoc(doc(db, "restaurants", auth.currentUser.uid), {
             offerText: text, showOffer: status
         });
-        alert("Offer Updated!");
-    } catch (e) { alert(e.message); }
+        alert("Offers Updated!");
+    } catch (e) { alert("Error: " + e.message); }
     loader.style.display = 'none';
 };
 
-// --- 5. Menu Manager ---
+// --- 5. Menu Manager (With Image Upload) ---
 window.addMenuItem = async () => {
     const name = document.getElementById('item-name').value;
     const price = document.getElementById('item-price').value;
@@ -88,26 +89,33 @@ window.addMenuItem = async () => {
             itemData.imgUrl = await getDownloadURL(uploadTask.ref);
         }
         await addDoc(collection(db, "restaurants", auth.currentUser.uid, "menu"), itemData);
-        alert("Item Added!");
-    } catch (e) { alert(e.message); }
+        alert("Food Item Added to Menu!");
+        // Clear Inputs
+        document.getElementById('item-name').value = "";
+        document.getElementById('item-price').value = "";
+        document.getElementById('item-img').value = "";
+    } catch (e) { alert("Error adding item: " + e.message); }
     loader.style.display = 'none';
 };
 
 window.deleteItem = async (id) => {
-    if(confirm("Delete this item?")) {
-        await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id));
+    if(confirm("Are you sure you want to delete this item?")) {
+        try {
+            await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id));
+        } catch (e) { alert(e.message); }
     }
 };
 
 function loadMenu(uid) {
     onSnapshot(collection(db, "restaurants", uid, "menu"), (snap) => {
         const container = document.getElementById('owner-menu-list');
+        if(!container) return;
         container.innerHTML = "";
         snap.forEach(d => {
             const item = d.data();
             container.innerHTML += `
                 <div class="menu-item-card">
-                    <img src="${item.imgUrl || 'https://via.placeholder.com/150'}">
+                    <img src="${item.imgUrl || 'https://via.placeholder.com/150'}" onerror="this.src='https://via.placeholder.com/150'">
                     <h4>${item.name}</h4>
                     <p>₹${item.price}</p>
                     <button class="del-btn" onclick="deleteItem('${d.id}')">🗑️ Delete</button>
@@ -116,8 +124,8 @@ function loadMenu(uid) {
     });
 }
 
-// --- 6. Status & Expiry Logic ---
-function handleStatus(data) {
+// --- 6. Status & Expiry Logic (VVIP) ---
+function handleStatus(data, uid) {
     document.getElementById('disp-status').innerText = data.status.toUpperCase();
     document.getElementById('disp-plan').innerText = data.plan;
     document.getElementById('top-res-name').innerText = data.name;
@@ -125,24 +133,68 @@ function handleStatus(data) {
     if(data.createdAt) {
         let createdDate = data.createdAt.toDate();
         let expiryDate = new Date(createdDate);
+        
+        // Calculate Expiry Date
         if(data.plan === "Monthly") expiryDate.setDate(createdDate.getDate() + 30);
         else expiryDate.setFullYear(createdDate.getFullYear() + 1);
+        
         document.getElementById('disp-expiry').innerText = expiryDate.toLocaleDateString('en-GB');
+
+        // Logic for Expiry Alerts & Blocking
+        let today = new Date();
+        let timeDiff = expiryDate.getTime() - today.getTime();
+        let daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        const warningBanner = document.getElementById('expiry-warning');
+        const expiredScreen = document.getElementById('expired-screen');
+        const daysSpan = document.getElementById('days-left');
+
+        if (daysLeft <= 0) {
+            // PLAN EXPIRED
+            if(expiredScreen) expiredScreen.style.display = 'flex';
+            if(mainWrapper) mainWrapper.style.display = 'none';
+            if(data.status !== "expired") {
+                updateDoc(doc(db, "restaurants", uid), { status: "expired" });
+            }
+        } 
+        else if (daysLeft <= 7) {
+            // 7 DAY WARNING
+            if(warningBanner) {
+                warningBanner.style.display = 'block';
+                if(daysSpan) daysSpan.innerText = daysLeft;
+            }
+        } else {
+            if(warningBanner) warningBanner.style.display = 'none';
+        }
     }
 
     if(data.status === 'active') {
         if(mainWrapper) mainWrapper.style.display = 'flex';
+        document.getElementById('expired-screen').style.display = 'none';
+    } else if (data.status === 'expired') {
+        document.getElementById('expired-screen').style.display = 'flex';
+        if(mainWrapper) mainWrapper.style.display = 'none';
     }
 }
 
-// --- 7. QR Code ---
+// Renewal Button Logic
+window.goToRenewal = () => {
+    document.getElementById('expired-screen').style.display = 'none';
+    document.getElementById('membership-section').style.display = 'block';
+};
+
+// --- 7. QR Code Generation ---
 function generateQR(uid) {
     const box = document.getElementById("qrcode-box");
     if(box) {
         box.innerHTML = "";
         new QRCode(box, {
             text: `https://platto.netlify.app/user.html?resId=${uid}&table=1`,
-            width: 200, height: 200
+            width: 200, 
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
         });
     }
 }
@@ -154,23 +206,46 @@ window.downloadQR = () => {
         link.href = img.src;
         link.download = "Platto_Restaurant_QR.png";
         link.click();
+    } else {
+        alert("Please wait for QR to generate");
     }
 };
 
-// --- 8. Auth Listener ---
+// --- 8. Auth Listener & Real-time Sync ---
 onAuthStateChanged(auth, (user) => {
     if(user) {
         onSnapshot(doc(db, "restaurants", user.uid), (d) => {
             if(d.exists()) {
-                handleStatus(d.data());
+                const data = d.data();
+                handleStatus(data, user.uid);
                 loadMenu(user.uid);
                 generateQR(user.uid);
+                
+                // Pre-fill profile if active
+                if(data.status === 'active') {
+                    document.getElementById('res-name').value = data.name || "";
+                    document.getElementById('res-address').value = data.address || "";
+                    document.getElementById('res-phone').value = data.ownerPhone || "";
+                    document.getElementById('res-about').value = data.about || "";
+                    document.getElementById('res-upi').value = data.upiId || "";
+                    document.getElementById('offer-text').value = data.offerText || "";
+                    document.getElementById('offer-status').checked = data.showOffer || false;
+                }
             }
         });
     } else {
-        window.location.href = "owner.html"; // Redirect if logout
+        // Only redirect if not on the login page to avoid loops
+        if(!window.location.href.includes("owner.html")) {
+            window.location.href = "owner.html";
+        }
     }
     if(loader) loader.style.display = 'none';
 });
 
-window.logout = () => signOut(auth).then(() => location.reload());
+window.logout = () => {
+    signOut(auth).then(() => {
+        location.reload();
+    }).catch((error) => {
+        alert("Error logging out: " + error.message);
+    });
+};
