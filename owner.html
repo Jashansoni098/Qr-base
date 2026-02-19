@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platto Partner | Login & Management</title>
+    <title>Platto Partner | Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="owner-style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
+    <!-- Loader Screen -->
     <div id="loader" class="loader-overlay"><div class="spinner"></div></div>
 
-    <!-- 1. AUTH AREA (Isme Login aur Signup dono hain) -->
-    <div id="auth-area" style="display: none;">
-        <section class="flex-center">
+    <!-- 1. AUTH & ONBOARDING AREA -->
+    <div id="auth-area" style="display: block;">
+        <!-- Login / Signup -->
+        <section id="auth-section" class="flex-center">
             <div class="auth-card">
                 <div class="brand-logo">PLATTO<span>Partner</span></div>
                 <h2 id="auth-title">Partner Login</h2>
-                <p id="auth-subtitle">Manage your restaurant operations</p>
-                
+                <p id="auth-subtitle">Manage your restaurant digitally</p>
                 <div class="input-group">
                     <label>Email Address</label>
                     <input type="email" id="email" placeholder="name@restaurant.com">
@@ -28,12 +29,10 @@
                     <label>Password</label>
                     <input type="password" id="password" placeholder="••••••••">
                 </div>
-                
                 <button id="authBtn" class="primary-btn">Login</button>
-                
                 <div class="auth-footer">
                     <p id="toggle-wrapper">
-                        New to Platto? <span onclick="toggleAuth()" class="link-text">Create Account</span>
+                        New to Platto? <span onclick="toggleAuth()" style="color:#6366f1; cursor:pointer; font-weight:bold;">Create Account</span>
                     </p>
                 </div>
             </div>
@@ -41,36 +40,31 @@
 
         <!-- Membership Plans -->
         <section id="membership-section" class="container" style="display:none; padding: 40px 20px;">
-            <h1 class="center-text">Choose a Plan to Start</h1>
+            <h1 style="text-align:center;">Choose a Plan to Start</h1>
             <div class="plans-grid">
                 <div class="plan-card" onclick="selectPlan('Monthly', 499)">
                     <h3>Monthly Plan</h3>
-                    <p class="price">₹499</p>
-                    <ul><li>Live Order Tracking</li><li>Digital QR Menu</li></ul>
+                    <p>₹499 / Mo</p>
                 </div>
                 <div class="plan-card featured" onclick="selectPlan('Yearly', 3999)">
-                    <div class="badge">Recommended</div>
+                    <div class="badge">Value</div>
                     <h3>Yearly Plan</h3>
-                    <p class="price">₹3999</p>
-                    <ul><li>Everything in Monthly</li><li>Priority Support</li></ul>
+                    <p>₹3999 / Yr</p>
                 </div>
             </div>
-            
-            <div id="payment-panel" class="card payment-box" style="display:none; margin-top:30px;">
-                <h3>Pay ₹<span id="payable-amt">0</span> via UPI</h3>
-                <p>UPI ID: <b style="color:var(--primary)">platto@okaxis</b></p>
-                <input type="text" id="res-name-input" placeholder="Restaurant Name (Required)">
-                <label>Upload Screenshot of Payment</label>
-                <input type="file" id="payment-proof" accept="image/*">
-                <button id="submitPaymentBtn" class="primary-btn">Submit for Approval</button>
+            <div id="payment-panel" class="card" style="display:none; margin-top:30px; text-align:center;">
+                <h3>Pay ₹<span id="payable-amt">0</span> via UPI: <b style="color:#6366f1;">platto@okaxis</b></h3>
+                <input type="text" id="res-name-input" placeholder="Restaurant Name">
+                <input type="file" id="payment-proof" accept="image/*" style="margin: 15px 0;">
+                <button id="submitPaymentBtn" class="primary-btn">Submit Proof</button>
             </div>
         </section>
 
-        <!-- Waiting Screen -->
+        <!-- Waiting for Approval -->
         <section id="waiting-section" class="flex-center" style="display:none;">
-            <div class="card center-text" style="max-width:400px;">
-                <h2 style="color:#f59e0b;">⏳ Verification in Progress</h2>
-                <p>Admin aapka payment check kar raha hai. Approval ke baad dashboard khud khul jayega.</p>
+            <div class="card" style="text-align:center;">
+                <h2>⏳ Approval Pending</h2>
+                <p>Admin is verifying your payment. Dashboard will unlock soon.</p>
             </div>
         </section>
     </div>
@@ -78,14 +72,16 @@
     <!-- 2. EXPIRED OVERLAY -->
     <div id="expired-screen" class="expired-overlay" style="display:none;">
         <div class="expired-card">
+            <img src="https://cdn-icons-png.flaticon.com/512/564/564619.png" width="60">
             <h1>Plan Expired!</h1>
-            <p>Your subscription ended. Please renew to access your menu and orders.</p>
-            <button class="primary-btn" onclick="goToRenewal()">Renew Now</button>
+            <p>Aapki services stop kar di gayi hain. Dubara chalu karne ke liye renew karein.</p>
+            <button class="primary-btn" onclick="goToRenewal()">Renew Now / Buy Plan</button>
         </div>
     </div>
 
     <!-- 3. MAIN DASHBOARD -->
     <div id="main-wrapper" style="display:none;" class="dashboard-container">
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="side-logo">PLATTO<span>Partner</span></div>
             <nav class="side-nav">
@@ -93,35 +89,42 @@
                 <button class="nav-link" onclick="showSection('orders')">🔔 Orders <span id="order-count-badge" class="badge-red">0</span></button>
                 <button class="nav-link" onclick="showSection('profile')">🏢 Profile</button>
                 <button class="nav-link" onclick="showSection('menu')">🍴 Menu</button>
+                <button class="nav-link" onclick="showSection('payment-tab')">💳 Payment & Offers</button>
                 <button class="nav-link" onclick="showSection('qr')">🖼️ QR Code</button>
                 <button class="nav-link logout" onclick="logout()">🚪 Logout</button>
             </nav>
         </aside>
 
+        <!-- Content Area -->
         <main class="content">
-            <div id="expiry-warning" class="expiry-banner" style="display:none;">⚠️ Plan Alert: Renew in <span id="days-left"></span> days!</div>
+            <!-- Expiry Warning Banner -->
+            <div id="expiry-warning" class="expiry-banner" style="display:none;">
+                ⚠️ Aapka plan <span id="days-left">0</span> din mein khatam hoga. Kripya renew karein!
+            </div>
 
-            <!-- Dashboard Sections (Status, Orders, Profile, Menu, QR) -->
+            <!-- TAB: STATUS -->
             <section id="status-sec" class="page-sec">
-                <h1>Dashboard, <span id="top-res-name">...</span></h1>
+                <h1>Dashboard, <span id="top-res-name">Partner</span></h1>
                 <div class="status-grid">
                     <div class="stat-card"><small>Status</small><h2 id="disp-status">--</h2></div>
                     <div class="stat-card"><small>Plan</small><h2 id="disp-plan">--</h2></div>
-                    <div class="stat-card"><small>Expiry</small><h2 id="disp-expiry">--</h2></div>
+                    <div class="stat-card"><small>Valid Till</small><h2 id="disp-expiry">--</h2></div>
                 </div>
             </section>
 
+            <!-- TAB: ORDERS (KDS) -->
             <section id="orders-sec" class="page-sec" style="display:none;">
                 <div class="order-tabs">
                     <button class="tab-item active" onclick="switchOrderTab('Pending', this)">New <span id="count-new">0</span></button>
                     <button class="tab-item" onclick="switchOrderTab('Preparing', this)">Preparing <span id="count-prep">0</span></button>
                     <button class="tab-item" onclick="switchOrderTab('Ready', this)">Ready <span id="count-ready">0</span></button>
-                    <button class="tab-item" onclick="switchOrderTab('Picked Up', this)">Picked Up</button>
+                    <button class="tab-item" onclick="switchOrderTab('Picked Up', this)">Picked Up <span id="count-picked">0</span></button>
                     <button class="tab-item" onclick="switchOrderTab('Past Orders', this)">History</button>
                 </div>
                 <div id="orders-display-grid" class="orders-grid-display"></div>
             </section>
 
+            <!-- TAB: PROFILE -->
             <section id="profile-sec" class="page-sec" style="display:none;">
                 <div class="card">
                     <h3>Restaurant Profile</h3>
@@ -136,9 +139,10 @@
                 </div>
             </section>
 
+            <!-- TAB: MENU -->
             <section id="menu-sec" class="page-sec" style="display:none;">
                 <div class="card">
-                    <h3>Add New Item</h3>
+                    <h3>Add New Menu Item</h3>
                     <div class="form-grid">
                         <input type="text" id="item-name" placeholder="Item Name">
                         <input type="number" id="item-price" placeholder="Price">
@@ -149,16 +153,34 @@
                 <div id="owner-menu-list" class="menu-display-grid"></div>
             </section>
 
+            <!-- TAB: PAYMENT & OFFERS -->
+            <section id="payment-tab-sec" class="page-sec" style="display:none;">
+                <div class="card">
+                    <h3>Payment UPI Settings</h3>
+                    <input type="text" id="res-upi" placeholder="Your UPI ID (e.g. name@upi)">
+                    <input type="file" id="res-qr-file" accept="image/*">
+                    <button class="primary-btn" onclick="savePaymentInfo()" style="margin-top:10px;">Save Payment</button>
+                </div>
+                <div class="card" style="margin-top:20px;">
+                    <h3>Discount & Offer Control</h3>
+                    <input type="text" id="offer-text" placeholder="Offer Text (e.g. 10% OFF)">
+                    <label><input type="checkbox" id="offer-status"> Show Offer to Customers?</label>
+                    <button class="primary-btn" onclick="saveOffer()" style="margin-top:10px;">Save Offer</button>
+                </div>
+            </section>
+
+            <!-- TAB: QR GENERATOR -->
             <section id="qr-sec" class="page-sec" style="display:none; text-align:center;">
                 <div class="card">
-                    <h3>Table QR Code</h3>
+                    <h3>Restaurant Menu QR Code</h3>
                     <div id="qrcode-box" style="display:flex; justify-content:center; margin:20px;"></div>
-                    <button class="primary-btn" onclick="downloadQR()">Download QR</button>
+                    <button class="primary-btn" onclick="downloadQR()">Download QR Code</button>
                 </div>
             </section>
         </main>
     </div>
 
+    <!-- Script Import -->
     <script type="module" src="owner-script.js"></script>
 </body>
 </html>
