@@ -1,6 +1,6 @@
 import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, updateDoc, collection, addDoc, onSnapshot, deleteDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, updateDoc, collection, addDoc, onSnapshot, deleteDoc, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const loader = document.getElementById('loader');
@@ -55,6 +55,8 @@ document.getElementById('submitPaymentBtn').onclick = async () => {
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
 
+        // Naya restaurant document create karein
+        await doc(db, "restaurants", auth.currentUser.uid); 
         await addDoc(collection(db, "restaurants"), {
             ownerId: auth.currentUser.uid,
             name: resName,
@@ -95,6 +97,12 @@ function syncDashboard(data, uid) {
         loadOrders(uid);
         loadMenu(uid);
         generateQR(uid);
+        
+        // Data auto-fill karein profile tab mein
+        document.getElementById('res-name').value = data.name || "";
+        document.getElementById('res-phone').value = data.ownerPhone || "";
+        document.getElementById('res-address').value = data.address || "";
+        document.getElementById('res-prep-time').value = data.prepTime || "";
     } else if(data.status === 'pending') {
         authArea.style.display = 'block';
         document.getElementById('auth-section').style.display = 'none';
@@ -103,7 +111,7 @@ function syncDashboard(data, uid) {
 }
 
 // ==========================================
-// 4. KDS (5-TAB ORDER SYSTEM)
+// 4. FIX: ORDER SYSTEM (COUNTS & DATE)
 // ==========================================
 window.switchOrderTab = (status, el) => {
     currentOrderTab = status;
@@ -117,31 +125,50 @@ function loadOrders(uid) {
     onSnapshot(q, (snap) => {
         const grid = document.getElementById('orders-display-grid');
         grid.innerHTML = "";
-        let counts = { Pending: 0, Preparing: 0, Ready: 0 };
+        
+        // All tab counts
+        let counts = { Pending: 0, Preparing: 0, Ready: 0, "Picked Up": 0 };
 
         snap.forEach(d => {
             const order = d.data();
             if(counts[order.status] !== undefined) counts[order.status]++;
             
-            if(order.status === currentOrderTab || (currentOrderTab === 'Past Orders' && order.status === 'Picked Up')) {
-                const items = order.items.map(i => `• ${i.name}`).join('<br>');
-                let btn = "";
-                if(order.status === "Pending") btn = `<button class="primary-btn" onclick="updateOrderStatus('${d.id}','Preparing')">Accept</button>`;
-                else if(order.status === "Preparing") btn = `<button class="primary-btn" style="background:orange;" onclick="updateOrderStatus('${d.id}','Ready')">Ready</button>`;
-                else if(order.status === "Ready") btn = `<button class="primary-btn" style="background:blue;" onclick="updateOrderStatus('${d.id}','Picked Up')">Done</button>`;
+            // Tab Filter Logic
+            const isHistoryTab = (currentOrderTab === 'Past Orders' && (order.status === 'Picked Up' || order.status === 'Rejected'));
+            const isNormalTab = (order.status === currentOrderTab);
 
-                grid.innerHTML += `<div class="order-card"><b>Table ${order.table}</b><hr>${items}<p>Total: ₹${order.total}</p>${btn}</div>`;
+            if(isNormalTab || isHistoryTab) {
+                const items = order.items.map(i => `• ${i.name}`).join('<br>');
+                const orderDate = order.timestamp ? order.timestamp.toDate().toLocaleDateString('en-GB') : "No Date";
+                
+                let btn = "";
+                if(order.status === "Pending") btn = `<button class="primary-btn" style="background:green;" onclick="updateOrderStatus('${d.id}','Preparing')">Accept Order</button>`;
+                else if(order.status === "Preparing") btn = `<button class="primary-btn" style="background:orange;" onclick="updateOrderStatus('${d.id}','Ready')">Mark Ready</button>`;
+                else if(order.status === "Ready") btn = `<button class="primary-btn" style="background:blue;" onclick="updateOrderStatus('${d.id}','Picked Up')">Order Picked Up</button>`;
+
+                grid.innerHTML += `
+                    <div class="order-card">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:gray; margin-bottom:5px;">
+                            <span>Date: ${orderDate}</span> <span>Table ${order.table}</span>
+                        </div>
+                        <hr>${items}<p>Total: <b>₹${order.total}</b></p>${btn}
+                    </div>`;
             }
         });
-        document.getElementById('count-new').innerText = counts.Pending;
-        document.getElementById('order-count-badge').innerText = counts.Pending;
+
+        // FIX: Update All Count Badges
+        if(document.getElementById('count-new')) document.getElementById('count-new').innerText = counts.Pending;
+        if(document.getElementById('count-prep')) document.getElementById('count-prep').innerText = counts.Preparing;
+        if(document.getElementById('count-ready')) document.getElementById('count-ready').innerText = counts.Ready;
+        if(document.getElementById('count-picked')) document.getElementById('count-picked').innerText = counts["Picked Up"];
+        if(document.getElementById('order-count-badge')) document.getElementById('order-count-badge').innerText = counts.Pending;
     });
 }
 
 window.updateOrderStatus = async (id, status) => { await updateDoc(doc(db, "orders", id), { status }); };
 
 // ==========================================
-// 5. PROFILE & MENU
+// 5. FIX: PROFILE SAVE LOGIC
 // ==========================================
 window.saveProfile = async () => {
     loader.style.display = 'flex';
@@ -151,16 +178,39 @@ window.saveProfile = async () => {
         address: document.getElementById('res-address').value,
         prepTime: document.getElementById('res-prep-time').value
     };
-    await updateDoc(doc(db, "restaurants", auth.currentUser.uid), upData);
-    loader.style.display = 'none'; alert("Profile Saved!");
+    
+    try {
+        const resRef = doc(db, "restaurants", auth.currentUser.uid);
+        await updateDoc(resRef, upData);
+        
+        // Logo Upload Fix
+        const logoFile = document.getElementById('res-logo-file').files[0];
+        if(logoFile) {
+            const logoRef = ref(storage, `logos/${auth.currentUser.uid}`);
+            await uploadBytes(logoRef, logoFile);
+            const logoUrl = await getDownloadURL(logoRef);
+            await updateDoc(resRef, { logoUrl: logoUrl });
+        }
+        
+        alert("Profile & Settings Saved Successfully!");
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+    loader.style.display = 'none';
 };
 
 window.addMenuItem = async () => {
     const name = document.getElementById('item-name').value;
     const price = document.getElementById('item-price').value;
-    if(!name || !price) return;
-    await addDoc(collection(db, "restaurants", auth.currentUser.uid, "menu"), { name, price });
-    alert("Item Added!");
+    if(!name || !price) return alert("Details missing!");
+    
+    loader.style.display = 'flex';
+    try {
+        const itemRef = collection(db, "restaurants", auth.currentUser.uid, "menu");
+        await addDoc(itemRef, { name, price });
+        alert("Item Added!");
+    } catch(e) { alert(e.message); }
+    loader.style.display = 'none';
 };
 
 function loadMenu(uid) {
@@ -169,28 +219,50 @@ function loadMenu(uid) {
         list.innerHTML = "";
         snap.forEach(d => {
             const item = d.data();
-            list.innerHTML += `<div class="card">${item.name} - ₹${item.price} <button onclick="deleteItem('${d.id}')" style="color:red; background:none; border:none; cursor:pointer;">Delete</button></div>`;
+            list.innerHTML += `<div class="card">${item.name} - ₹${item.price} <button onclick="deleteItem('${d.id}')" style="color:red; background:none; border:none; cursor:pointer; float:right;">Delete</button></div>`;
         });
     });
 }
 
-window.deleteItem = async (id) => { await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id)); };
+window.deleteItem = async (id) => { 
+    if(confirm("Delete item?")) await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id)); 
+};
 
 // ==========================================
-// 6. QR & OBSERVER
+// 6. FIX: QR SCAN URL
 // ==========================================
 function generateQR(uid) {
-    const box = document.getElementById("qrcode-box"); box.innerHTML = "";
-    new QRCode(box, `https://platto.netlify.app/user.html?resId=${uid}&table=1`);
+    const box = document.getElementById("qrcode-box"); 
+    if(box) {
+        box.innerHTML = "";
+        // Correct User Site URL
+        const userUrl = `https://qrbaseuser-site.netlify.app/user.html?resId=${uid}&table=1`;
+        new QRCode(box, {
+            text: userUrl,
+            width: 200,
+            height: 200
+        });
+    }
 }
 
+// ==========================================
+// 7. OBSERVER
+// ==========================================
 onAuthStateChanged(auth, (user) => {
     if(user) {
         onSnapshot(doc(db, "restaurants", user.uid), (d) => {
             if(d.exists()) syncDashboard(d.data(), user.uid);
-            else { authArea.style.display = 'block'; document.getElementById('membership-section').style.display = 'block'; document.getElementById('auth-section').style.display = 'none'; }
+            else { 
+                authArea.style.display = 'block'; 
+                document.getElementById('membership-section').style.display = 'block'; 
+                document.getElementById('auth-section').style.display = 'none'; 
+            }
         });
-    } else { authArea.style.display = 'block'; mainWrapper.style.display = 'none'; document.getElementById('auth-section').style.display = 'block'; }
+    } else { 
+        authArea.style.display = 'block'; 
+        mainWrapper.style.display = 'none'; 
+        document.getElementById('auth-section').style.display = 'block'; 
+    }
     loader.style.display = 'none';
 });
 
