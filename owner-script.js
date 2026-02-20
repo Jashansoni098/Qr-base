@@ -17,8 +17,8 @@ window.toggleAuth = () => {
     document.getElementById('auth-title').innerText = isLoginMode ? "Partner Login" : "Partner Sign Up";
     document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Sign Up";
     document.getElementById('toggle-wrapper').innerHTML = isLoginMode ? 
-        `New here? <span onclick="toggleAuth()" style="color:#6366f1; cursor:pointer; font-weight:bold;">Create Account</span>` : 
-        `Already have account? <span onclick="toggleAuth()" style="color:#6366f1; cursor:pointer; font-weight:bold;">Login</span>`;
+        `New here? <span onclick="toggleAuth()" class="link-text">Create Account</span>` : 
+        `Have account? <span onclick="toggleAuth()" class="link-text">Login</span>`;
 };
 
 document.getElementById('authBtn').onclick = async () => {
@@ -112,7 +112,7 @@ window.savePaymentInfo = async () => {
 
         await updateDoc(resRef, updateData);
         alert("Payment Details Saved!");
-    } catch (e) { alert("Payment Error: " + e.message); }
+    } catch (e) { alert(e.message); }
     if(loader) loader.style.display = 'none';
 };
 
@@ -128,7 +128,7 @@ window.saveOffer = async () => {
             showOffer: document.getElementById('offer-status').checked
         });
         alert("Offer Updated!");
-    } catch (e) { alert("Offer Error: " + e.message); }
+    } catch (e) { alert(e.message); }
     if(loader) loader.style.display = 'none';
 };
 
@@ -171,7 +171,7 @@ window.deleteItem = async (id) => {
 };
 
 // ==========================================
-// 5. ORDERS & KDS
+// 5. ORDERS & KDS (UPDATED WITH NEW FEATURES)
 // ==========================================
 window.switchOrderTab = (status, el) => {
     currentOrderTab = status;
@@ -193,10 +193,23 @@ function loadOrders(uid) {
             if(order.status === currentOrderTab) {
                 const items = order.items.map(i => `• ${i.name}`).join('<br>');
                 let btn = "";
-                if(order.status === "Pending") btn = `<button class="primary-btn" style="background:green; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Preparing')">Accept</button>`;
-                else if(order.status === "Preparing") btn = `<button class="primary-btn" style="background:orange; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Ready')">Ready</button>`;
-                else if(order.status === "Ready") btn = `<button class="primary-btn" style="background:blue; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Picked Up')">Picked Up</button>`;
-                grid.innerHTML += `<div class="order-card"><b>Table ${order.table}</b><hr>${items}<p>Total: ₹${order.total}</p>${btn}</div>`;
+                if(order.status === "Pending") btn = `<button class="primary-btn" style="background:#22c55e; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Preparing')">Accept Order</button>`;
+                else if(order.status === "Preparing") btn = `<button class="primary-btn" style="background:#f59e0b; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Ready')">Mark Ready</button>`;
+                else if(order.status === "Ready") btn = `<button class="primary-btn" style="background:#3b82f6; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Picked Up')">Order Picked Up</button>`;
+
+                grid.innerHTML += `
+                    <div class="order-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-weight:800;">Table ${order.table}</span>
+                            <span style="color:#6366f1; font-size:0.8rem; font-weight:bold; border:1px solid #6366f1; padding:2px 6px; border-radius:5px;">${order.paymentMode || 'N/A'}</span>
+                        </div>
+                        <p style="margin:5px 0; font-size:0.95rem;">Customer: <b>${order.customerName || 'Guest'}</b></p>
+                        <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                        <div style="font-size:0.9rem; color:#475569; margin-bottom:10px;">${items}</div>
+                        ${order.instruction ? `<p style="font-size:0.8rem; color:#e11d48; background:#fff1f2; padding:8px; border-radius:8px; margin-bottom:10px;"><b>Note:</b> ${order.instruction}</p>` : ''}
+                        <p style="border-top:1px solid #eee; padding-top:10px;">Total Bill: <b>₹${order.total}</b></p>
+                        ${btn}
+                    </div>`;
             }
         });
         if(document.getElementById('count-new')) document.getElementById('count-new').innerText = counts.Pending;
@@ -210,28 +223,37 @@ window.updateOrderStatus = async (id, status) => { await updateDoc(doc(db, "orde
 // 6. SYNC & OBSERVER
 // ==========================================
 function syncDashboard(data, uid) {
-    if(document.getElementById('disp-status')) document.getElementById('disp-status').innerText = data.status.toUpperCase();
-    if(document.getElementById('disp-plan')) document.getElementById('disp-plan').innerText = data.plan;
-    if(document.getElementById('top-res-name')) document.getElementById('top-res-name').innerText = data.name || "Partner";
+    const statusEl = document.getElementById('disp-status');
+    const planEl = document.getElementById('disp-plan');
+    const expiryEl = document.getElementById('disp-expiry');
+    const topName = document.getElementById('top-res-name');
+    const warning = document.getElementById('expiry-warning');
+    const expired = document.getElementById('expired-screen');
 
-    if(data.createdAt && document.getElementById('disp-expiry')) {
-        let expiry = new Date(data.createdAt.toDate());
-        expiry.setDate(expiry.getDate() + (data.plan === "Monthly" ? 30 : 365));
-        document.getElementById('disp-expiry').innerText = expiry.toLocaleDateString('en-GB');
-        let daysLeft = Math.ceil((expiry - new Date()) / (1000 * 3600 * 24));
+    if(statusEl) statusEl.innerText = data.status.toUpperCase();
+    if(planEl) planEl.innerText = data.plan;
+    if(topName) topName.innerText = data.name || "Partner";
+
+    if(data.createdAt && expiryEl) {
+        let createdDate = data.createdAt.toDate();
+        let expiryDate = new Date(createdDate);
+        expiryDate.setDate(createdDate.getDate() + (data.plan === "Monthly" ? 30 : 365));
+        expiryEl.innerText = expiryDate.toLocaleDateString('en-GB');
+        
+        let daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 3600 * 24));
         if(daysLeft <= 0) {
-            document.getElementById('expired-screen').style.display = 'flex';
-            mainWrapper.style.display = 'none';
-        } else if(daysLeft <= 7) {
-            document.getElementById('expiry-warning').style.display = 'block';
-            document.getElementById('days-left').innerText = daysLeft;
+            if(expired) expired.style.display = 'flex';
+            if(mainWrapper) mainWrapper.style.display = 'none';
+        } else if(daysLeft <= 7) { 
+            if(warning) warning.style.display = 'block'; 
+            if(document.getElementById('days-left')) document.getElementById('days-left').innerText = daysLeft;
         }
     }
 
     if(data.status === 'active') {
         if(authArea) authArea.style.display = 'none';
         if(mainWrapper) mainWrapper.style.display = 'flex';
-        // Auto-fill
+        // Auto-fill inputs
         if(document.getElementById('res-name')) document.getElementById('res-name').value = data.name || "";
         if(document.getElementById('res-phone')) document.getElementById('res-phone').value = data.ownerPhone || "";
         if(document.getElementById('res-address')) document.getElementById('res-address').value = data.address || "";
