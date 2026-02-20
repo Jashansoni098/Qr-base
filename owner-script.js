@@ -9,29 +9,22 @@ const mainWrapper = document.getElementById('main-wrapper');
 let currentOrderTab = "Pending";
 
 // ==========================================
-// 1. AUTH LOGIC (LOGIN / SIGNUP)
+// 1. AUTH LOGIC
 // ==========================================
 let isLoginMode = true;
 window.toggleAuth = () => {
     isLoginMode = !isLoginMode;
-    const title = document.getElementById('auth-title');
-    const btn = document.getElementById('authBtn');
-    const toggleWrapper = document.getElementById('toggle-wrapper');
-
-    if(title) title.innerText = isLoginMode ? "Partner Login" : "Partner Sign Up";
-    if(btn) btn.innerText = isLoginMode ? "Login" : "Sign Up";
-    if(toggleWrapper) {
-        toggleWrapper.innerHTML = isLoginMode ? 
-        `New here? <span onclick="toggleAuth()" class="link-text" style="color:#6366f1; cursor:pointer; font-weight:bold;">Create Account</span>` : 
-        `Have account? <span onclick="toggleAuth()" class="link-text" style="color:#6366f1; cursor:pointer; font-weight:bold;">Login</span>`;
-    }
+    document.getElementById('auth-title').innerText = isLoginMode ? "Partner Login" : "Partner Sign Up";
+    document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Sign Up";
+    document.getElementById('toggle-wrapper').innerHTML = isLoginMode ? 
+        `New here? <span onclick="toggleAuth()" style="color:#6366f1; cursor:pointer; font-weight:bold;">Create Account</span>` : 
+        `Already have account? <span onclick="toggleAuth()" style="color:#6366f1; cursor:pointer; font-weight:bold;">Login</span>`;
 };
 
 document.getElementById('authBtn').onclick = async () => {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
     if(!email || !pass) return alert("Credentials bhariye!");
-
     if(loader) loader.style.display = 'flex';
     try {
         if(isLoginMode) await signInWithEmailAndPassword(auth, email, pass);
@@ -41,29 +34,25 @@ document.getElementById('authBtn').onclick = async () => {
 };
 
 // ==========================================
-// 2. MEMBERSHIP & PAYMENT
+// 2. MEMBERSHIP & PAYMENT (ONBOARDING)
 // ==========================================
 let selectedPlanName = "";
 window.selectPlan = (name, price) => {
     selectedPlanName = name;
-    const payAmt = document.getElementById('payable-amt');
-    const payPanel = document.getElementById('payment-panel');
-    if(payAmt) payAmt.innerText = price;
-    if(payPanel) payPanel.style.display = 'block';
+    document.getElementById('payable-amt').innerText = price;
+    document.getElementById('payment-panel').style.display = 'block';
 };
 
 document.getElementById('submitPaymentBtn').onclick = async () => {
     const file = document.getElementById('payment-proof').files[0];
     const resName = document.getElementById('res-name-input').value;
-    if(!file || !resName) return alert("Name & Screenshot required!");
-
+    if(!file || !resName) return alert("Proof & Name required!");
     if(loader) loader.style.display = 'flex';
     try {
         const storageRef = ref(storage, `proofs/${auth.currentUser.uid}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
-
-        await addDoc(collection(db, "restaurants"), {
+        await setDoc(doc(db, "restaurants", auth.currentUser.uid), {
             ownerId: auth.currentUser.uid,
             name: resName,
             plan: selectedPlanName,
@@ -77,155 +66,91 @@ document.getElementById('submitPaymentBtn').onclick = async () => {
 };
 
 // ==========================================
-// 3. DASHBOARD LOGIC (Status & Sync)
-// ==========================================
-function syncDashboard(data, uid) {
-    const statusEl = document.getElementById('disp-status');
-    const planEl = document.getElementById('disp-plan');
-    const expiryEl = document.getElementById('disp-expiry');
-    const topName = document.getElementById('top-res-name');
-    const warning = document.getElementById('expiry-warning');
-    const expired = document.getElementById('expired-screen');
-    const waiting = document.getElementById('waiting-section');
-    const authSec = document.getElementById('auth-section');
-
-    if(statusEl) statusEl.innerText = data.status.toUpperCase();
-    if(planEl) planEl.innerText = data.plan;
-    if(topName) topName.innerText = data.name || "Partner";
-
-    if(data.createdAt) {
-        let createdDate = data.createdAt.toDate();
-        let expiryDate = new Date(createdDate);
-        expiryDate.setDate(createdDate.getDate() + (data.plan === "Monthly" ? 30 : 365));
-        
-        if(expiryEl) expiryEl.innerText = expiryDate.toLocaleDateString('en-GB');
-
-        let daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 3600 * 24));
-        
-        if(daysLeft <= 0) {
-            if(expired) expired.style.display = 'flex'; 
-            if(mainWrapper) mainWrapper.style.display = 'none';
-        } else if(daysLeft <= 7) {
-            if(warning) warning.style.display = 'block'; 
-            const daysLeftSpan = document.getElementById('days-left');
-            if(daysLeftSpan) daysLeftSpan.innerText = daysLeft;
-        }
-    }
-
-    if(data.status === 'active') {
-        if(authArea) authArea.style.display = 'none';
-        if(mainWrapper) mainWrapper.style.display = 'flex';
-        
-        // Data auto-fill
-        if(document.getElementById('res-name')) document.getElementById('res-name').value = data.name || "";
-        if(document.getElementById('res-phone')) document.getElementById('res-phone').value = data.ownerPhone || "";
-        if(document.getElementById('res-address')) document.getElementById('res-address').value = data.address || "";
-        if(document.getElementById('res-prep-time')) document.getElementById('res-prep-time').value = data.prepTime || "";
-        
-        loadOrders(uid);
-        loadMenu(uid);
-        generateQR(uid);
-    } else if(data.status === 'pending') {
-        if(authArea) authArea.style.display = 'block';
-        if(authSec) authSec.style.display = 'none';
-        if(waiting) waiting.style.display = 'block';
-    }
-}
-
-// ==========================================
-// 4. ORDER SYSTEM (KDS)
-// ==========================================
-window.switchOrderTab = (status, el) => {
-    currentOrderTab = status;
-    document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    loadOrders(auth.currentUser.uid);
-};
-
-function loadOrders(uid) {
-    const q = query(collection(db, "orders"), where("resId", "==", uid));
-    onSnapshot(q, (snap) => {
-        const grid = document.getElementById('orders-display-grid');
-        if(!grid) return;
-        grid.innerHTML = "";
-        
-        let counts = { Pending: 0, Preparing: 0, Ready: 0, "Picked Up": 0 };
-
-        snap.forEach(d => {
-            const order = d.data();
-            if(counts[order.status] !== undefined) counts[order.status]++;
-            
-            const isHistoryTab = (currentOrderTab === 'Past Orders' && (order.status === 'Picked Up' || order.status === 'Rejected'));
-            const isNormalTab = (order.status === currentOrderTab);
-
-            if(isNormalTab || isHistoryTab) {
-                const items = order.items.map(i => `• ${i.name}`).join('<br>');
-                const orderDate = order.timestamp ? order.timestamp.toDate().toLocaleDateString('en-GB') : "No Date";
-                
-                let btn = "";
-                if(order.status === "Pending") btn = `<button class="primary-btn" style="background:green; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Preparing')">Accept Order</button>`;
-                else if(order.status === "Preparing") btn = `<button class="primary-btn" style="background:orange; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Ready')">Mark Ready</button>`;
-                else if(order.status === "Ready") btn = `<button class="primary-btn" style="background:blue; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Picked Up')">Order Picked Up</button>`;
-
-                grid.innerHTML += `
-                    <div class="order-card">
-                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:gray; margin-bottom:5px;">
-                            <span>Date: ${orderDate}</span> <span>Table ${order.table}</span>
-                        </div>
-                        <hr>${items}<p>Total: <b>₹${order.total}</b></p>${btn}
-                    </div>`;
-            }
-        });
-
-        if(document.getElementById('count-new')) document.getElementById('count-new').innerText = counts.Pending;
-        if(document.getElementById('count-prep')) document.getElementById('count-prep').innerText = counts.Preparing;
-        if(document.getElementById('count-ready')) document.getElementById('count-ready').innerText = counts.Ready;
-        if(document.getElementById('count-picked')) document.getElementById('count-picked').innerText = counts["Picked Up"];
-        if(document.getElementById('order-count-badge')) document.getElementById('order-count-badge').innerText = counts.Pending;
-    });
-}
-
-window.updateOrderStatus = async (id, status) => { await updateDoc(doc(db, "orders", id), { status }); };
-
-// ==========================================
-// 5. PROFILE & MENU LOGIC
+// FIX 1: PROFILE & LOGO SAVE
 // ==========================================
 window.saveProfile = async () => {
     if(loader) loader.style.display = 'flex';
-    const upData = {
-        name: document.getElementById('res-name').value,
-        ownerPhone: document.getElementById('res-phone').value,
-        address: document.getElementById('res-address').value,
-        prepTime: document.getElementById('res-prep-time').value
-    };
-    
     try {
         const resRef = doc(db, "restaurants", auth.currentUser.uid);
-        await updateDoc(resRef, upData);
-        
+        let updateData = {
+            name: document.getElementById('res-name').value,
+            ownerPhone: document.getElementById('res-phone').value,
+            address: document.getElementById('res-address').value,
+            prepTime: document.getElementById('res-prep-time').value || "20"
+        };
+
         const logoFile = document.getElementById('res-logo-file').files[0];
         if(logoFile) {
             const logoRef = ref(storage, `logos/${auth.currentUser.uid}`);
             await uploadBytes(logoRef, logoFile);
-            const logoUrl = await getDownloadURL(logoRef);
-            await updateDoc(resRef, { logoUrl: logoUrl });
+            updateData.logoUrl = await getDownloadURL(logoRef);
         }
-        alert("Profile & Settings Saved Successfully!");
-    } catch (e) { alert("Error: " + e.message); }
+
+        await updateDoc(resRef, updateData);
+        alert("Restaurant Profile Updated!");
+    } catch (e) { alert("Profile Error: " + e.message); }
     if(loader) loader.style.display = 'none';
 };
 
+// ==========================================
+// FIX 2: PAYMENT UPI & QR SAVE
+// ==========================================
+window.savePaymentInfo = async () => {
+    if(loader) loader.style.display = 'flex';
+    try {
+        const resRef = doc(db, "restaurants", auth.currentUser.uid);
+        let updateData = {
+            upiId: document.getElementById('res-upi').value
+        };
+
+        const qrFile = document.getElementById('res-qr-file').files[0];
+        if(qrFile) {
+            const qrRef = ref(storage, `payment_qrs/${auth.currentUser.uid}`);
+            await uploadBytes(qrRef, qrFile);
+            updateData.paymentQrUrl = await getDownloadURL(qrRef);
+        }
+
+        await updateDoc(resRef, updateData);
+        alert("Payment Details Saved!");
+    } catch (e) { alert("Payment Error: " + e.message); }
+    if(loader) loader.style.display = 'none';
+};
+
+// ==========================================
+// FIX 3: DISCOUNT & OFFER SAVE
+// ==========================================
+window.saveOffer = async () => {
+    if(loader) loader.style.display = 'flex';
+    try {
+        const resRef = doc(db, "restaurants", auth.currentUser.uid);
+        await updateDoc(resRef, {
+            offerText: document.getElementById('offer-text').value,
+            showOffer: document.getElementById('offer-status').checked
+        });
+        alert("Offer Updated!");
+    } catch (e) { alert("Offer Error: " + e.message); }
+    if(loader) loader.style.display = 'none';
+};
+
+// ==========================================
+// 4. MENU MANAGER
+// ==========================================
 window.addMenuItem = async () => {
     const name = document.getElementById('item-name').value;
     const price = document.getElementById('item-price').value;
-    if(!name || !price) return alert("Details missing!");
-    
+    const file = document.getElementById('item-img').files[0];
+    if(!name || !price) return alert("Fill details");
     if(loader) loader.style.display = 'flex';
     try {
-        const itemRef = collection(db, "restaurants", auth.currentUser.uid, "menu");
-        await addDoc(itemRef, { name, price });
-        alert("Item Added!");
-    } catch(e) { alert(e.message); }
+        let itemData = { name, price, createdAt: new Date() };
+        if(file) {
+            const itemRef = ref(storage, `menu/${auth.currentUser.uid}/${Date.now()}`);
+            await uploadBytes(itemRef, file);
+            itemData.imgUrl = await getDownloadURL(itemRef);
+        }
+        await addDoc(collection(db, "restaurants", auth.currentUser.uid, "menu"), itemData);
+        alert("Added!");
+    } catch (e) { alert(e.message); }
     if(loader) loader.style.display = 'none';
 };
 
@@ -241,78 +166,123 @@ function loadMenu(uid) {
     });
 }
 
-window.deleteItem = async (id) => { 
-    if(confirm("Delete item?")) await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id)); 
+window.deleteItem = async (id) => {
+    if(confirm("Delete?")) await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id));
 };
 
 // ==========================================
-// 6. QR & OFFERS
+// 5. ORDERS & KDS
 // ==========================================
-function generateQR(uid) {
-    const box = document.getElementById("qrcode-box"); 
-    if(box) {
-        box.innerHTML = "";
-        const userUrl = `https://qrbaseuser-site.netlify.app/user.html?resId=${uid}&table=1`;
-        new QRCode(box, { text: userUrl, width: 200, height: 200 });
+window.switchOrderTab = (status, el) => {
+    currentOrderTab = status;
+    document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    loadOrders(auth.currentUser.uid);
+};
+
+function loadOrders(uid) {
+    const q = query(collection(db, "orders"), where("resId", "==", uid));
+    onSnapshot(q, (snap) => {
+        const grid = document.getElementById('orders-display-grid');
+        if(!grid) return;
+        grid.innerHTML = "";
+        let counts = { Pending: 0, Preparing: 0, Ready: 0, "Picked Up": 0 };
+        snap.forEach(d => {
+            const order = d.data();
+            if(counts[order.status] !== undefined) counts[order.status]++;
+            if(order.status === currentOrderTab) {
+                const items = order.items.map(i => `• ${i.name}`).join('<br>');
+                let btn = "";
+                if(order.status === "Pending") btn = `<button class="primary-btn" style="background:green; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Preparing')">Accept</button>`;
+                else if(order.status === "Preparing") btn = `<button class="primary-btn" style="background:orange; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Ready')">Ready</button>`;
+                else if(order.status === "Ready") btn = `<button class="primary-btn" style="background:blue; margin-top:10px;" onclick="updateOrderStatus('${d.id}','Picked Up')">Picked Up</button>`;
+                grid.innerHTML += `<div class="order-card"><b>Table ${order.table}</b><hr>${items}<p>Total: ₹${order.total}</p>${btn}</div>`;
+            }
+        });
+        if(document.getElementById('count-new')) document.getElementById('count-new').innerText = counts.Pending;
+        if(document.getElementById('order-count-badge')) document.getElementById('order-count-badge').innerText = counts.Pending;
+    });
+}
+
+window.updateOrderStatus = async (id, status) => { await updateDoc(doc(db, "orders", id), { status }); };
+
+// ==========================================
+// 6. SYNC & OBSERVER
+// ==========================================
+function syncDashboard(data, uid) {
+    if(document.getElementById('disp-status')) document.getElementById('disp-status').innerText = data.status.toUpperCase();
+    if(document.getElementById('disp-plan')) document.getElementById('disp-plan').innerText = data.plan;
+    if(document.getElementById('top-res-name')) document.getElementById('top-res-name').innerText = data.name || "Partner";
+
+    if(data.createdAt && document.getElementById('disp-expiry')) {
+        let expiry = new Date(data.createdAt.toDate());
+        expiry.setDate(expiry.getDate() + (data.plan === "Monthly" ? 30 : 365));
+        document.getElementById('disp-expiry').innerText = expiry.toLocaleDateString('en-GB');
+        let daysLeft = Math.ceil((expiry - new Date()) / (1000 * 3600 * 24));
+        if(daysLeft <= 0) {
+            document.getElementById('expired-screen').style.display = 'flex';
+            mainWrapper.style.display = 'none';
+        } else if(daysLeft <= 7) {
+            document.getElementById('expiry-warning').style.display = 'block';
+            document.getElementById('days-left').innerText = daysLeft;
+        }
+    }
+
+    if(data.status === 'active') {
+        if(authArea) authArea.style.display = 'none';
+        if(mainWrapper) mainWrapper.style.display = 'flex';
+        // Auto-fill
+        if(document.getElementById('res-name')) document.getElementById('res-name').value = data.name || "";
+        if(document.getElementById('res-phone')) document.getElementById('res-phone').value = data.ownerPhone || "";
+        if(document.getElementById('res-address')) document.getElementById('res-address').value = data.address || "";
+        if(document.getElementById('res-prep-time')) document.getElementById('res-prep-time').value = data.prepTime || "";
+        if(document.getElementById('res-upi')) document.getElementById('res-upi').value = data.upiId || "";
+        if(document.getElementById('offer-text')) document.getElementById('offer-text').value = data.offerText || "";
+        if(document.getElementById('offer-status')) document.getElementById('offer-status').checked = data.showOffer || false;
+        
+        loadOrders(uid); loadMenu(uid); generateQR(uid);
+    } else if(data.status === 'pending') {
+        if(authArea) authArea.style.display = 'block';
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('waiting-section').style.display = 'block';
     }
 }
 
-window.saveOffer = async () => {
-    const text = document.getElementById('offer-text').value;
-    const status = document.getElementById('offer-status').checked;
-    try {
-        await updateDoc(doc(db, "restaurants", auth.currentUser.uid), { offerText: text, showOffer: status });
-        alert("Offer Saved!");
-    } catch (e) { alert(e.message); }
-};
+function generateQR(uid) {
+    const box = document.getElementById("qrcode-box");
+    if(box) {
+        box.innerHTML = "";
+        new QRCode(box, { text: `https://qrbaseuser-site.netlify.app/user.html?resId=${uid}&table=1`, width: 200, height: 200 });
+    }
+}
 
-// ==========================================
-// 7. OBSERVER & APP INITIALIZATION
-// ==========================================
 onAuthStateChanged(auth, (user) => {
     if(user) {
         onSnapshot(doc(db, "restaurants", user.uid), (d) => {
-            if(d.exists()) {
-                syncDashboard(d.data(), user.uid);
-            } else {
+            if(d.exists()) syncDashboard(d.data(), user.uid);
+            else {
                 if(authArea) authArea.style.display = 'block';
-                const authSec = document.getElementById('auth-section');
-                const memSec = document.getElementById('membership-section');
-                if(authSec) authSec.style.display = 'none';
-                if(memSec) memSec.style.display = 'block';
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('membership-section').style.display = 'block';
             }
         });
     } else {
         if(authArea) authArea.style.display = 'block';
         if(mainWrapper) mainWrapper.style.display = 'none';
-        const authSec = document.getElementById('auth-section');
-        if(authSec) authSec.style.display = 'block';
+        document.getElementById('auth-section').style.display = 'block';
     }
     if(loader) loader.style.display = 'none';
 });
 
 window.logout = () => signOut(auth).then(() => location.reload());
-
 window.showSection = (id) => {
     document.querySelectorAll('.page-sec').forEach(s => s.style.display = 'none');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    const target = document.getElementById(id + '-sec');
-    if(target) target.style.display = 'block';
+    if(document.getElementById(id + '-sec')) document.getElementById(id + '-sec').style.display = 'block';
     if(event) event.currentTarget.classList.add('active');
 };
-
 window.downloadQR = () => {
     const img = document.querySelector("#qrcode-box img");
-    if(img) {
-        const link = document.createElement("a");
-        link.href = img.src; link.download = "Platto_QR.png"; link.click();
-    }
+    if(img) { const link = document.createElement("a"); link.href = img.src; link.download = "QR.png"; link.click(); }
 };
-
-window.goToRenewal = () => {
-    const expired = document.getElementById('expired-screen');
-    const memSec = document.getElementById('membership-section');
-    if(expired) expired.style.display = 'none';
-    if(authArea) authArea.style.display = 'block';
-    if(memSec) memSec.style.display = 'block';
-};
+window.goToRenewal = () => location.reload();
