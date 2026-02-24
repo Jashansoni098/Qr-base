@@ -1,92 +1,518 @@
-:root { --primary: #6366f1; --dark: #0f172a; --bg: #f8fafc; --white: #ffffff; --danger: #ef4444; }
-body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: var(--bg); color: var(--dark); overflow-x: hidden; }
+/* ==========================================
+   1. GLOBAL VARIABLES & RESET
+   ========================================== */
+:root {
+    --primary: #6366f1; /* Professional Indigo */
+    --primary-dark: #4f46e5;
+    --dark: #0f172a; /* Sidebar Dark Blue */
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --white: #ffffff;
+    --bg-page: #f8fafc;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
 
-/* Loader */
-.loader-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 10000; display:flex; justify-content:center; align-items:center; }
-.spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
 
-/* Cards & UI */
-.flex-center { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-.card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-.center-text { text-align: center; }
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-main);
+    line-height: 1.5;
+}
 
-/* Sidebar */
-.dashboard-container { display: flex; min-height: 100vh; }
-.sidebar { width: 260px; background: var(--dark); color: white; padding: 30px 20px; height: 100vh; position: sticky; top: 0; }
-.side-logo { font-size: 1.6rem; font-weight: 800; margin-bottom: 30px; }
-.side-logo span { color: var(--primary); }
-.nav-link { width: 100%; padding: 12px 15px; margin-bottom: 8px; background: none; border: none; color: #94a3b8; text-align: left; cursor: pointer; border-radius: 12px; font-weight: 600; transition: 0.3s; }
-.nav-link.active { background: var(--primary); color: white; }
-.nav-link.logout { color: #fca5a5; margin-top: 40px; }
+/* ==========================================
+   PLANS & MEMBERSHIP UI IMPROVEMENT
+   ========================================== */
 
-/* Dashboard Content */
-.content { flex: 1; padding: 30px; }
-.status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-.stat-card { background: white; padding: 20px; border-radius: 15px; border-bottom: 4px solid var(--primary); }
+/* Plans Container Grid */
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin: 30px 0;
+}
 
-/* KDS Tabs */
-.order-tabs { display: flex; background: #e2e8f0; padding: 5px; border-radius: 12px; margin-bottom: 20px; overflow-x: auto; gap: 5px; }
-.tab-item { flex: 1; padding: 12px; border: none; background: none; font-weight: 700; color: #64748b; cursor: pointer; border-radius: 10px; white-space: nowrap; }
-.tab-item.active { background: white; color: var(--primary); }
-.order-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--primary); }
+/* Individual Plan Card */
+.plan-card {
+    background: #ffffff;
+    border: 2px solid #f1f5f9;
+    border-radius: 24px;
+    padding: 30px 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
 
-/* Form Grid */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+.plan-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Featured / Popular Card Styling */
+.plan-card.featured {
+    border-color: #6366f1;
+    background: #fdfdff;
+}
+
+.plan-card.featured .badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #6366f1;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Plan Typography */
+.plan-card h3 {
+    margin: 10px 0;
+    font-size: 1.25rem;
+    color: var(--dark);
+    font-weight: 800;
+}
+
+.price-tag {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 15px 0;
+}
+
+.price-tag span {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* Feature List inside Card */
+.plan-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.plan-card ul li {
+    padding: 8px 0;
+    font-size: 0.85rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.plan-card ul li::before {
+    content: "\f00c"; /* FontAwesome Checkmark */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: #22c55e;
+}
+
+/* Payment Box UI */
+.payment-box {
+    border-top: 5px solid var(--primary);
+    background: #ffffff;
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 35px !important;
+}
+
+#admin-upi-display {
+    display: inline-block;
+    background: #f1f5f9;
+    padding: 8px 20px;
+    border-radius: 12px;
+    margin-top: 10px;
+    border: 1px dashed var(--primary);
+    letter-spacing: 1px;
+}
+
+.pro-input {
+    margin-bottom: 15px !important;
+}
+
+/* ==========================================
+   2. DASHBOARD LAYOUT & SIDEBAR
+   ========================================== */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background: var(--dark);
+    color: white;
+    padding: 30px 20px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.side-logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 40px;
+    letter-spacing: -0.5px;
+}
+
+.side-logo span {
+    color: var(--primary);
+}
+
+.side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nav-link {
+    width: 100%;
+    padding: 14px 18px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: 0.3s;
+}
+
+.nav-link i { font-size: 1.1rem; width: 20px; }
+
+.nav-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.active {
+    background: var(--primary);
+    color: white;
+}
+
+.nav-link.logout {
+    margin-top: 50px;
+    color: #fca5a5;
+}
+
+.badge-red {
+    background: var(--danger);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    margin-left: auto;
+}
+
+/* ==========================================
+   3. MAIN CONTENT AREA
+   ========================================== */
+.content {
+    flex: 1;
+    padding: 40px;
+    margin-left: 260px; /* Offset for sidebar */
+    max-width: 100%;
+}
+
+.card {
+    background: var(--white);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 25px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+/* ==========================================
+   4. KDS ORDERS (5-TABS SYSTEM)
+   ========================================== */
+.order-tabs {
+    display: flex;
+    background: #e2e8f0;
+    padding: 5px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    gap: 5px;
+    overflow-x: auto;
+}
+
+.tab-item {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    background: none;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 10px;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+.tab-item.active {
+    background: white;
+    color: var(--primary);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.orders-grid-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.order-card {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.03);
+    border: 1px solid #f1f5f9;
+    border-left: 6px solid var(--primary);
+}
+
+/* ==========================================
+   5. MENU & CATEGORY MANAGER
+   ========================================== */
+.menu-display-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.menu-item-card {
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;
+    text-align: center;
+    border: 1px solid #f1f5f9;
+    padding-bottom: 15px;
+}
+
+.menu-item-card img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+}
+
+.category-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag-badge {
+    background: #eff6ff;
+    color: #3b82f6;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* ==========================================
+   6. FORMS & INPUTS
+   ========================================== */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
 .full-width { grid-column: span 2; }
-input, textarea, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
-.primary-btn { background: var(--primary); color: white; border: none; padding: 14px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.3s; }
 
-/* Overlays */
-.expired-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.98); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-.expired-card { background: white; padding: 50px; border-radius: 30px; text-align: center; max-width: 400px; }
-.expiry-banner { background: #fee2e2; color: #b91c1c; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: 700; text-align: center; border: 1px solid #fecdd3; }
+input, textarea, select {
+    width: 100%;
+    padding: 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: 0.3s;
+}
 
-.qr-container { display: flex; justify-content: center; margin: 20px 0; }
-.badge-red { background: var(--danger); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; }
+input:focus, textarea:focus {
+    border-color: var(--primary);
+    background: white;
+}
+
+.price-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.primary-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 16px 25px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.primary-btn:hover { background: var(--primary-dark); }
+
+.btn-icon {
+    background: var(--dark);
+    color: white;
+    width: 50px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+/* ==========================================
+   7. STATUS & OVERLAYS
+   ========================================== */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    border-bottom: 4px solid var(--primary);
+}
+
+.expiry-banner {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.expired-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.98);
+    z-index: 5000;
+    display: flex; justify-content: center; align-items: center;
+}
+
+.expired-card {
+    background: white;
+    padding: 50px;
+    border-radius: 35px;
+    text-align: center;
+    max-width: 450px;
+}
+
+/* ==========================================
+   8. MODALS (EDIT ITEM)
+   ========================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 4000;
+    display: flex; justify-content: center; align-items: center;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 400px;
+    padding: 30px;
+    border-radius: 30px;
+    text-align: center;
+}
+
+/* ==========================================
+   9. AUTH CARD
+   ========================================== */
+.auth-card {
+    background: white;
+    padding: 45px;
+    border-radius: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.link-text {
+    color: var(--primary);
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* ==========================================
+   10. MOBILE RESPONSIVENESS
+   ========================================== */
+@media (max-width: 992px) {
+    .sidebar { width: 80px; padding: 20px 10px; }
+    .nav-link span, .side-logo span, .nav-link i { font-size: 1.2rem; }
+    .nav-link span, .side-logo { display: none; }
+    .content { margin-left: 80px; }
+}
 
 @media (max-width: 768px) {
     .dashboard-container { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: relative; padding: 15px; }
-    .form-grid { grid-template-columns: 1fr; }
+    .sidebar {
+        width: 100%; height: auto;
+        position: relative; padding: 15px;
+        flex-direction: row;
+    }
+    .content { margin-left: 0; padding: 20px; }
+    .grid-2, .form-grid { grid-template-columns: 1fr; }
+    .side-logo { display: block; margin-bottom: 20px; }
 }
-:root { --primary: #6366f1; --dark: #0f172a; --bg: #f8fafc; --white: #ffffff; }
-body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: var(--bg); color: var(--dark); }
 
-.flex-center { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-.auth-card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
-.input-group { text-align: left; margin-bottom: 15px; }
-.input-group label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 5px; color: #64748b; }
-.input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; }
-
-.primary-btn { background: var(--primary); color: white; border: none; padding: 14px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.3s; }
-.link-text { color: var(--primary); font-weight: bold; cursor: pointer; text-decoration: underline; }
-
-/* Dashboard Layout */
-.dashboard-container { display: flex; min-height: 100vh; }
-.sidebar { width: 260px; background: var(--dark); color: white; padding: 30px 20px; height: 100vh; position: sticky; top: 0; }
-.side-logo { font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; }
-.nav-link { width: 100%; padding: 12px 15px; margin-bottom: 10px; background: none; border: none; color: #94a3b8; text-align: left; cursor: pointer; border-radius: 12px; font-weight: 600; font-family: inherit; }
-.nav-link.active { background: var(--primary); color: white; }
-.nav-link.logout { color: #fca5a5; margin-top: 40px; }
-
-.content { flex: 1; padding: 40px; }
-.stat-card { background: white; padding: 20px; border-radius: 15px; border-bottom: 4px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-.status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-
-/* KDS Tabs */
-.order-tabs { display: flex; background: #e2e8f0; padding: 5px; border-radius: 12px; margin-bottom: 25px; overflow-x: auto; gap: 5px; }
-.tab-item { flex: 1; padding: 12px; border: none; background: none; font-weight: 700; color: #64748b; cursor: pointer; border-radius: 10px; white-space: nowrap; }
-.tab-item.active { background: white; color: var(--primary); }
-
-/* Common UI */
-.card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.loader-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 10000; display:flex; justify-content:center; align-items:center; }
-.spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+/* Utils */
+.loader-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: white; z-index: 10000;
+    display: flex; justify-content: center; align-items: center;
+}
+.spinner {
+    width: 45px; height: 45px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-@media (max-width: 768px) {
-    .dashboard-container { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: relative; padding: 15px; }
-}
