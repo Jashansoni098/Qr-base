@@ -45,8 +45,19 @@
 
         <!-- Membership Selection (Dynamic Prices from Admin) -->
       <!-- Membership Selection Section (UPDATED with Coupon & Banner) -->
+<!-- Membership Selection Section -->
 <section id="membership-section" class="container" style="display:none; padding: 40px 20px;">
     
+    <!-- FIX: Logout Button for Membership Screen -->
+    <div style="text-align: right; margin-bottom: 20px;">
+        <button class="btn-text" onclick="window.logout()" style="color: #e11d48; font-weight: 800; border: 1px solid #e11d48; padding: 8px 15px; border-radius: 10px; cursor: pointer; background: transparent;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+
+    <h1 class="center-text">Select Membership Plan</h1>
+    <!-- ... baki plans grid niche ... -->
+
     <!-- 1. PROMO BANNER (Admin side se jo message likhoge wo yahan professional dikhega) -->
     <div id="promo-banner" style="display:none; background: #eff6ff; color: #1d4ed8; padding: 15px; border-radius: 12px; margin-bottom: 25px; font-weight: 700; font-size: 0.9rem; border: 1px dashed #3b82f6; text-align: center;">
         <i class="fas fa-gift"></i> <span id="promo-banner-text">Checking for active offers...</span>
@@ -220,7 +231,8 @@
                             <input type="number" id="item-price" placeholder="Reg. Price ₹">
                             <input type="number" id="item-price-m" placeholder="Med. Price ₹">
                             <input type="number" id="item-price-l" placeholder="Large Price ₹">
-                            <textarea id="item-ingredients" placeholder="Toppings / Ingredients (e.g. Cheese, Olives, Corn)" class="full-width"></textarea>
+                           <!-- owner.html mein check karein -->
+<textarea id="item-ingredients" placeholder="Toppings / Ingredients (e.g. Cheese, Onion, Tomato)" class="full-width"></textarea>
                             <div class="full-width">
                                 <label style="font-size: 0.8rem; font-weight: 700;">Food Photo</label>
                                 <input type="file" id="item-img" accept="image/*">
