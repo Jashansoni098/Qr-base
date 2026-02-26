@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Custom Style -->
+    <!-- Linking CSS File -->
     <link rel="stylesheet" href="owner-style.css">
     
     <!-- Libraries -->
@@ -20,7 +20,7 @@
     <!-- Professional Page Loader -->
     <div id="loader" class="loader-overlay"><div class="spinner"></div></div>
 
-    <!-- Notification Sound -->
+    <!-- Notification Sound for New Orders -->
     <audio id="order-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <!-- ==========================================
@@ -37,111 +37,104 @@
                     <input type="password" id="password" placeholder="Password">
                 </div>
                 <button id="authBtn" class="primary-btn">Login</button>
-                <p id="toggle-wrapper" style="margin-top:15px; font-size:0.9rem;">
+                <p id="toggle-wrapper">
                     New here? <span onclick="window.toggleAuth()" style="color:#6366f1; cursor:pointer; font-weight:bold;">Create Account</span>
                 </p>
             </div>
         </section>
 
-        <!-- Membership Selection (Dynamic Prices from Admin) -->
-      <!-- Membership Selection Section (UPDATED with Coupon & Banner) -->
-<!-- Membership Selection Section -->
-<section id="membership-section" class="container" style="display:none; padding: 40px 20px;">
-    
-    <!-- FIX: Logout Button for Membership Screen -->
-    <div style="text-align: right; margin-bottom: 20px;">
-        <button class="btn-text" onclick="window.logout()" style="color: #e11d48; font-weight: 800; border: 1px solid #e11d48; padding: 8px 15px; border-radius: 10px; cursor: pointer; background: transparent;">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
-    </div>
-
-    <h1 class="center-text">Select Membership Plan</h1>
-    <!-- ... baki plans grid niche ... -->
-
-    <!-- 1. PROMO BANNER (Admin side se jo message likhoge wo yahan professional dikhega) -->
-    <div id="promo-banner" style="display:none; background: #eff6ff; color: #1d4ed8; padding: 15px; border-radius: 12px; margin-bottom: 25px; font-weight: 700; font-size: 0.9rem; border: 1px dashed #3b82f6; text-align: center;">
-        <i class="fas fa-gift"></i> <span id="promo-banner-text">Checking for active offers...</span>
-    </div>
-
-    <h1 class="center-text" style="margin-bottom:10px;">Select Membership Plan</h1>
-    <p style="text-align:center; color:gray; margin-bottom:30px;">Choose the best plan to digitize your restaurant</p>
-
-    <div class="plans-grid">
-        <!-- Monthly -->
-        <div class="plan-card" id="card-Monthly" onclick="window.selectPlan('Monthly')">
-            <h3>Monthly</h3>
-            <p class="price-tag">₹<span id="display-price-Monthly">---</span></p>
-            <ul>
-                <li><i class="fas fa-check"></i> Digital QR Menu</li>
-                <li><i class="fas fa-check"></i> Live Orders KDS</li>
-            </ul>
-        </div>
-
-        <!-- 6 Months (Popular) -->
-        <div class="plan-card featured" id="card-6-Months" onclick="window.selectPlan('6-Months')">
-            <div class="badge">Popular Choice</div>
-            <h3>6 Months</h3>
-            <p class="price-tag">₹<span id="display-price-6-Months">---</span></p>
-            <ul>
-                <li><i class="fas fa-check"></i> Save on Subscription</li>
-                <li><i class="fas fa-check"></i> Priority Support</li>
-            </ul>
-        </div>
-
-        <!-- Yearly (Best Value) -->
-        <div class="plan-card" id="card-Yearly" onclick="window.selectPlan('Yearly')">
-            <div class="badge" style="background:#22c55e;">Best Value</div>
-            <h3>Yearly</h3>
-            <p class="price-tag">₹<span id="display-price-Yearly">---</span></p>
-            <ul>
-                <li><i class="fas fa-check"></i> 2 Months Free</li>
-                <li><i class="fas fa-check"></i> Master Analytics</li>
-            </ul>
-        </div>
-    </div>
-    
-    <!-- Payment & Coupon Box -->
-    <div id="payment-panel" class="card payment-box" style="display:none; margin-top:30px; border: 2px solid #e2e8f0;">
-        <h2 style="margin-bottom: 10px;">Complete Your Payment</h2>
-        <div style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-            <p style="margin:0;">Payable Amount: <b style="font-size:1.4rem; color:var(--primary);">₹<span id="payable-amt">0</span></b></p>
-            <p style="margin:5px 0 0 0; font-size:0.9rem;">Admin UPI: <b id="admin-upi-display" style="color:#1e293b;">loading...</b></p>
-        </div>
-
-        <!-- MEMBERSHIP COUPON INPUT -->
-        <div style="max-width: 350px; margin: 0 auto 25px auto; text-align: left;">
-            <label style="display:block; font-size:0.8rem; font-weight:800; color:#64748b; margin-bottom:8px;">Have a Promo Code?</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="m-coupon-input" placeholder="Enter Coupon" style="text-transform: uppercase; flex:1; border: 2px solid #e2e8f0; border-radius:10px; padding:10px;">
-                <button onclick="window.applyMembershipCoupon()" class="primary-btn" style="width:auto; padding: 0 20px; height:45px;">Apply</button>
+        <!-- Membership Selection Section -->
+        <section id="membership-section" class="container" style="display:none; padding: 40px 20px;">
+            <div style="text-align: right; margin-bottom: 20px;">
+                <button class="btn-text-red" onclick="window.logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
-            <p id="m-coupon-msg" style="font-size:0.75rem; font-weight:800; margin-top:8px;"></p>
-        </div>
 
-        <div class="form-grid">
-            <div class="full-width">
-                <input type="text" id="res-name-input" placeholder="Confirm Restaurant Name" style="border: 2px solid #e2e8f0;">
+            <!-- Promo Banner from Admin -->
+            <div id="promo-banner" style="display:none;" class="promo-banner-ui">
+                <i class="fas fa-gift"></i> <span id="promo-banner-text">Checking for active offers...</span>
             </div>
-            <div class="full-width" style="text-align:left;">
-                <label style="display:block; font-size:0.8rem; font-weight:800; margin-bottom:5px;">Upload Payment Screenshot</label>
-                <input type="file" id="payment-proof" accept="image/*" style="padding:10px; border: 2px dashed #cbd5e1; border-radius:10px; width:100%;">
-            </div>
-        </div>
-        
-        <button id="submitPaymentBtn" class="primary-btn" onclick="window.submitPayment()" style="margin-top:20px; font-size:1.1rem; height:55px;">
-            Submit Payment for Approval
-        </button>
-    </div>
-</section>
 
-        <!-- Waiting for Approval -->
+            <h1 class="center-text">Select Membership Plan</h1>
+            <p class="center-text sub-txt">Choose a plan to digitize your restaurant menu</p>
+
+            <div class="plans-grid">
+                <!-- Monthly -->
+                <div class="plan-card" id="card-Monthly" onclick="window.selectPlan('Monthly')">
+                    <h3>Monthly</h3>
+                    <p class="price-tag">₹<span id="display-price-Monthly">---</span></p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Digital QR Menu</li>
+                        <li><i class="fas fa-check"></i> Live Orders KDS</li>
+                    </ul>
+                </div>
+
+                <!-- 6 Months (Popular) -->
+                <div class="plan-card featured" id="card-6-Months" onclick="window.selectPlan('6-Months')">
+                    <div class="badge-pop">Popular Choice</div>
+                    <h3>6 Months</h3>
+                    <p class="price-tag">₹<span id="display-price-6-Months">---</span></p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Save 15% on Plan</li>
+                        <li><i class="fas fa-check"></i> Priority Support</li>
+                    </ul>
+                </div>
+
+                <!-- Yearly (Best Value) -->
+                <div class="plan-card" id="card-Yearly" onclick="window.selectPlan('Yearly')">
+                    <div class="badge-pop" style="background:#22c55e;">Best Value</div>
+                    <h3>Yearly</h3>
+                    <p class="price-tag">₹<span id="display-price-Yearly">---</span></p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 2 Months Free</li>
+                        <li><i class="fas fa-check"></i> Business Analytics</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Payment & Membership Coupon Box -->
+            <div id="payment-panel" class="card payment-box-ui" style="display:none; margin-top:30px;">
+                <h2>Complete Payment</h2>
+                <div class="payment-info-strip">
+                    <p>Payable Amount: <b class="text-primary">₹<span id="payable-amt">0</span></b></p>
+                    <p>Admin UPI: <b id="admin-upi-display">loading...</b></p>
+                </div>
+
+                <!-- Membership Coupon -->
+                <div class="m-coupon-box">
+                    <label>Have a Referral/Promo Code?</label>
+                    <div class="flex-row">
+                        <input type="text" id="m-coupon-input" placeholder="Enter Code">
+                        <button onclick="window.applyMembershipCoupon()">Apply</button>
+                    </div>
+                    <p id="m-coupon-msg"></p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="full-width">
+                        <input type="text" id="res-name-input" placeholder="Confirm Restaurant Name">
+                    </div>
+                    <div class="full-width">
+                        <label class="file-label">Upload Payment Screenshot</label>
+                        <input type="file" id="payment-proof" accept="image/*">
+                    </div>
+                </div>
+                
+                <button id="submitPaymentBtn" class="primary-btn" onclick="window.submitPayment()">
+                    Submit Verification Request
+                </button>
+            </div>
+        </section>
+
+        <!-- Waiting for Approval Screen -->
         <section id="waiting-section" class="flex-center" style="display:none;">
             <div class="auth-card" style="max-width: 450px;">
-                <div style="font-size: 3rem; margin-bottom: 20px;">⏳</div>
+                <div class="waiting-icon">⏳</div>
                 <h2>Verification in Progress</h2>
                 <p>We have received your payment proof. Our team is currently verifying your details.</p>
                 <div class="info-alert-yellow">
-                    Verification may take up to <b>24 hours</b>.
+                    Verification usually takes <b>1-2 hours</b> (Max 24h).
                 </div>
                 <button class="primary-btn" onclick="window.logout()" style="background:#64748b;">Logout</button>
             </div>
@@ -155,13 +148,13 @@
         <div class="expired-card">
             <img src="https://cdn-icons-png.flaticon.com/512/564/564619.png" width="60">
             <h1>Plan Expired!</h1>
-            <p>Please renew your plan to reactivate your digital menu.</p>
+            <p>Your subscription has ended. Please renew to continue services.</p>
             <button class="primary-btn" onclick="window.goToRenewal()">Renew Now</button>
         </div>
     </div>
 
     <!-- ==========================================
-       3. MAIN DASHBOARD WRAPPER
+       3. MAIN Master DASHBOARD
     ========================================== -->
     <div id="main-wrapper" style="display:none;" class="dashboard-container">
         
@@ -171,8 +164,8 @@
             <nav class="side-nav">
                 <button class="nav-link active" onclick="showSection('status')"><i class="fas fa-home"></i> Status</button>
                 <button class="nav-link" onclick="showSection('orders')"><i class="fas fa-bell"></i> Live Orders <span id="order-count-badge" class="badge-red">0</span></button>
-                <button class="nav-link" onclick="showSection('menu')"><i class="fas fa-utensils"></i> Menu & Categories</button>
-                <button class="nav-link" onclick="showSection('settings')"><i class="fas fa-cog"></i> Master Settings</button>
+                <button class="nav-link" onclick="showSection('menu')"><i class="fas fa-utensils"></i> Menu & Cat</button>
+                <button class="nav-link" onclick="showSection('settings')"><i class="fas fa-cog"></i> Store Settings</button>
                 <button class="nav-link" onclick="showSection('promo')"><i class="fas fa-ticket-alt"></i> Coupons & Popups</button>
                 <button class="nav-link" onclick="showSection('qr')"><i class="fas fa-qrcode"></i> QR Generator</button>
                 <button class="nav-link logout" onclick="window.logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -182,22 +175,22 @@
         <!-- Main Content Area -->
         <main class="content">
             
-            <!-- Warning Banner (7 days before) -->
+            <!-- Warning Banner -->
             <div id="expiry-warning" class="expiry-banner" style="display:none;">
-                ⚠️ Your plan expires in <span id="days-left">0</span> days. Please renew to avoid service stop!
+                ⚠️ Plan ends in <span id="days-left">0</span> days. Renew to avoid service stop!
             </div>
 
-            <!-- TAB: STATUS -->
+            <!-- SECTION: STATUS -->
             <section id="status-sec" class="page-sec">
                 <h1>Dashboard Overview</h1>
                 <div class="status-grid">
-                    <div class="stat-card"><small>Account Status</small><h2 id="disp-status" style="color:#22c55e;">--</h2></div>
-                    <div class="stat-card"><small>Current Plan</small><h2 id="disp-plan">--</h2></div>
-                    <div class="stat-card"><small>Valid Till</small><h2 id="disp-expiry">--</h2></div>
+                    <div class="stat-card"><small>Account Status</small><h2 id="disp-status">--</h2></div>
+                    <div class="stat-card"><small>Active Plan</small><h2 id="disp-plan">--</h2></div>
+                    <div class="stat-card"><small>Expires On</small><h2 id="disp-expiry">--</h2></div>
                 </div>
             </section>
 
-            <!-- TAB: ORDERS (5-Tab KDS) -->
+            <!-- SECTION: KDS ORDERS (5-Tabs) -->
             <section id="orders-sec" class="page-sec" style="display:none;">
                 <div class="order-tabs">
                     <button class="tab-item active" onclick="switchOrderTab('Pending', this)">New <span id="count-new">0</span></button>
@@ -206,104 +199,221 @@
                     <button class="tab-item" onclick="switchOrderTab('Picked Up', this)">Picked Up</button>
                     <button class="tab-item" onclick="switchOrderTab('Past Orders', this)">History</button>
                 </div>
+
+                <!-- History Date Filter (Hidden unless history tab active) -->
+              <!-- History Filter and Stats Display -->
+<!-- TAB: ORDERS - History Filter Controls -->
+<div id="history-filter-controls" style="display:none; flex-direction:column; gap:15px; padding:20px; background:#fff; border-radius:18px; margin-bottom:20px; border:1.5px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span style="font-weight:800; font-size:0.85rem; color:#64748b;">Report Period:</span>
+       <!-- Naye simple buttons jisme error nahi aayega -->
+<button class="btn-sm-pro" onclick="window.loadOrderHistory('today')">Today</button>
+<button class="btn-sm-pro" onclick="window.loadOrderHistory('7days')">7 Days</button>
+<button class="btn-sm-pro" onclick="window.loadOrderHistory('30days')">30 Days</button>
+<button class="btn-sm-pro" onclick="window.loadOrderHistory('1year')">1 Year</button>
+<button class="btn-sm-pro" style="background:#f1f5f9; color:#1e293b;" onclick="window.loadOrderHistory('all')">View All</button>
+
+    <!-- Stats Summary Section -->
+    <div id="history-stats" style="display:none; grid-template-columns: 1fr 1fr; gap:15px; margin-top:5px;">
+        <div style="background:var(--primary-light); padding:15px; border-radius:15px; text-align:center; border:1px solid #fecdd3;">
+            <small style="display:block; color:var(--primary); font-weight:800; font-size:0.65rem; text-transform:uppercase;">Orders Count</small>
+            <h2 id="hist-total-qty" style="margin:5px 0 0 0; color:var(--dark);">0</h2>
+        </div>
+        <div style="background:#f0fdf4; padding:15px; border-radius:15px; text-align:center; border:1px solid #bbf7d0;">
+            <small style="display:block; color:#16a34a; font-weight:800; font-size:0.65rem; text-transform:uppercase;">Revenue Collected</small>
+            <h2 id="hist-total-amt" style="margin:5px 0 0 0; color:var(--dark);">₹0</h2>
+        </div>
+    </div>
+</div>
+
                 <div id="orders-display-grid" class="orders-grid-display"></div>
             </section>
 
-            <!-- TAB: MENU & CATEGORY MANAGER -->
+            <!-- SECTION: MENU & CATEGORY MANAGER -->
             <section id="menu-sec" class="page-sec" style="display:none;">
-                <div class="grid-2">
+               <!-- SECTION: ADVANCED EXTRAS MANAGER -->
+<!-- SECTION: ADVANCED EXTRAS & SELECTION LIMITS -->
+<div class="grid-2" style="margin-top:20px;">
+    <!-- Part A: Create Groups (e.g., Crust, Toppings) -->
+    <div class="card">
+        <h3>1. Create Extra Groups</h3>
+        <p class="card-subtitle">Example: Toppings (Limit 2), Cheese (Limit 1)</p>
+        <div class="form-grid">
+            <input type="text" id="ex-cat-name" placeholder="Group Name">
+            <select id="ex-cat-limit">
+                <option value="0">Unlimited Selection</option>
+                <option value="1">Select exactly 1 (Required)</option>
+                <option value="2">Select max 2</option>
+                <option value="3">Select max 3</option>
+            </select>
+            <button class="primary-btn" onclick="window.addExtraCategory()">Add Group</button>
+        </div>
+        <div id="ex-cat-display" class="category-tags-ui" style="margin-top:15px;"></div>
+    </div>
+
+    <!-- Part B: Add Items to those Groups -->
+    <div class="card">
+        <h3>2. Add Items to Groups</h3>
+        <div class="form-grid">
+            <select id="ex-item-group-select">
+                <option value="">Choose Group First</option>
+            </select>
+            <input type="text" id="ex-item-name" placeholder="Item (e.g. Onion)">
+            <input type="number" id="ex-item-price" placeholder="Price ₹">
+            <button class="primary-btn" onclick="window.addExtraItem()">Add Item</button>
+        </div>
+    </div>
+</div>
+
+<!-- Part C: Grouped View Summary -->
+<div class="card" style="margin-top:20px;">
+    <h3>Grouped Extras Summary</h3>
+    <div id="grouped-extras-display" class="menu-display-grid">
+        <!-- JS will render groups here -->
+    </div>
+</div>
+
                     <!-- Manage Categories -->
                     <div class="card">
                         <h3>Categories</h3>
-                        <div style="display:flex; gap:10px;">
+                        <div class="flex-row">
                             <input type="text" id="new-cat-name" placeholder="Category Name" class="pro-input">
-                            <button class="primary-btn" style="width:50px;" onclick="window.addCategory()">+</button>
+                            <button class="btn-icon-pro" onclick="window.addCategory()"><i class="fas fa-plus"></i></button>
                         </div>
-                        <div id="cat-list-display" class="category-tags" style="margin-top:15px;"></div>
+                        <div id="cat-list-display" class="category-tags-ui"></div>
                     </div>
 
                     <!-- Add Menu Item -->
                     <div class="card">
-                        <h3>Add Food Item</h3>
+                        <h3>Add New Item</h3>
                         <div class="form-grid">
                             <select id="item-category-select" class="full-width"><option value="">Select Category</option></select>
                             <input type="text" id="item-name" placeholder="Item Name">
-                            <input type="number" id="item-price" placeholder="Reg. Price ₹">
-                            <input type="number" id="item-price-m" placeholder="Med. Price ₹">
-                            <input type="number" id="item-price-l" placeholder="Large Price ₹">
-                           <!-- owner.html mein check karein -->
-<textarea id="item-ingredients" placeholder="Toppings / Ingredients (e.g. Cheese, Onion, Tomato)" class="full-width"></textarea>
-                            <div class="full-width">
-                                <label style="font-size: 0.8rem; font-weight: 700;">Food Photo</label>
-                                <input type="file" id="item-img" accept="image/*">
+                            <div class="price-row-pro">
+                                <input type="number" id="item-price" placeholder="Reg ₹">
+                                <input type="number" id="item-price-m" placeholder="Med ₹">
+                                <input type="number" id="item-price-l" placeholder="Large ₹">
                             </div>
+                            <textarea id="item-ingredients" placeholder="Ingredients/Toppings" class="full-width"></textarea>
+                            <div class="full-width"><label>Food Photo</label><input type="file" id="item-img" accept="image/*"></div>
                         </div>
-                        <button class="primary-btn" onclick="window.addMenuItem()">Add Item</button>
+                        <button class="primary-btn" onclick="window.addMenuItem()">Add to Menu</button>
                     </div>
                 </div>
 
-                <div class="card" style="margin-top:20px;">
-                    <h3>Active Menu List</h3>
-                    <div id="owner-menu-list" class="menu-display-grid"></div>
-                </div>
+                <!-- TAB: MENU & CATEGORIES ke andar sabse niche -->
+<div class="card" style="margin-top:20px;">
+    <h3>Manage Active Menu</h3>
+    
+    <!-- 1. Category Filter Tabs -->
+    <div id="menu-filter-tabs" class="category-scroll" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+        <!-- JS yahan clickable buttons banayega -->
+    </div>
+
+    <!-- 2. Items Display Area -->
+    <div id="filtered-menu-container" class="menu-display-grid">
+        <p style="color:gray; padding:20px;">Kripya koi category select karein...</p>
+    </div>
+</div>
             </section>
 
-            <!-- TAB: MASTER SETTINGS (WiFi, Socials, Delivery) -->
+            <!-- SECTION: MASTER SETTINGS (WiFi, Socials, Delivery KM) -->
             <section id="settings-sec" class="page-sec" style="display:none;">
                 <div class="card">
                     <h3>Restaurant Branding & Rules</h3>
                     <div class="form-grid">
-                        <div class="full-width"><label>Change Logo</label><input type="file" id="res-logo-file"></div>
-                        <div class="full-width"><label>Hero Banner Image (User Top Photo)</label><input type="file" id="res-banner-file"></div>
+                        <div class="full-width"><label>Update Logo</label><input type="file" id="res-logo-file"></div>
+                        <div class="full-width"><label>Update Hero Banner (User Top Photo)</label><input type="file" id="res-banner-file"></div>
                         <input type="text" id="res-name" placeholder="Display Name">
-                        <input type="text" id="res-phone" placeholder="Support Phone">
+                        <input type="text" id="res-phone" placeholder="Support/Call Number">
                         <input type="text" id="res-wifi-n" placeholder="WiFi Name">
                         <input type="text" id="res-wifi-p" placeholder="WiFi Password">
-                        <input type="number" id="res-min-order" placeholder="Min Order Delivery (₹)">
-                        <input type="number" id="res-max-km" placeholder="Delivery Range (KM)">
+                        <input type="number" id="res-min-order" placeholder="Min. Delivery Order ₹">
+                        <input type="number" id="res-max-km" placeholder="Delivery Range (Max KM)">
                         <input type="text" id="res-ig" placeholder="Instagram URL">
                         <input type="text" id="res-fb" placeholder="Facebook URL">
-                        <input type="text" id="res-yt" placeholder="YouTube URL">
                         <textarea id="res-address" placeholder="Full Address" class="full-width"></textarea>
-                        <textarea id="res-about" placeholder="About Us Description" class="full-width"></textarea>
+                        <textarea id="res-about" placeholder="About Description" class="full-width"></textarea>
                     </div>
                     <button class="primary-btn" onclick="window.saveProfile()">Save Master Settings</button>
                 </div>
             </section>
 
-            <!-- TAB: PROMO & POPUPS -->
-            <section id="promo-sec" class="page-sec" style="display:none;">
-                <div class="grid-2">
-                    <div class="card">
-                        <h3>Coupons Control</h3>
-                        <div class="form-grid">
-                            <input type="text" id="cp-code" placeholder="CODE">
-                            <input type="number" id="cp-perc" placeholder="Discount %">
-                            <input type="number" id="cp-min" placeholder="Min Order ₹">
-                            <input type="number" id="cp-max" placeholder="Max Discount ₹">
-                        </div>
-                        <button class="primary-btn" onclick="window.addCoupon()">Create Coupon</button>
-                        <div id="coupons-list" class="category-tags" style="margin-top:15px;"></div>
-                    </div>
-
-                    <div class="card">
-                        <h3>Announcement Popup</h3>
-                        <div class="form-grid">
-                            <input type="text" id="ann-title" placeholder="Popup Title">
-                            <textarea id="ann-text" placeholder="Announcement Message"></textarea>
-                            <label class="toggle-row"><input type="checkbox" id="ann-active"> Enable Popup?</label>
-                        </div>
-                        <button class="primary-btn" onclick="window.saveAnnouncement()">Update Popup</button>
-                    </div>
+            <!-- TAB: PROMO & COUPONS (FIXED UI) -->
+<section id="promo-sec" class="page-sec" style="display:none;">
+    <div class="promo-container">
+        
+        <!-- CARD 1: COUPON CREATOR -->
+        <div class="card promo-card">
+            <div class="card-header-pro">
+                <i class="fas fa-ticket-alt"></i>
+                <h3>Customer Coupons</h3>
+            </div>
+            <p class="card-subtitle">Create discount codes for your customers</p>
+            
+            <div class="form-grid-pro">
+                <div class="input-group-pro">
+                    <label>Coupon Code</label>
+                    <input type="text" id="cp-code" placeholder="e.g. PIZZA20">
                 </div>
-            </section>
+                <div class="input-group-pro">
+                    <label>Discount %</label>
+                    <input type="number" id="cp-perc" placeholder="e.g. 20">
+                </div>
+                <div class="input-group-pro">
+                    <label>Min. Order (₹)</label>
+                    <input type="number" id="cp-min" placeholder="e.g. 300">
+                </div>
+                <div class="input-group-pro">
+                    <label>Max. Discount (₹)</label>
+                    <input type="number" id="cp-max" placeholder="e.g. 100">
+                </div>
+            </div>
+            <button class="primary-btn-pro" onclick="window.addCoupon()">Create Coupon</button>
 
-            <!-- TAB: QR CODE -->
+            <div class="active-coupons-title">Active Coupons</div>
+            <div id="coupons-list" class="coupons-list-wrapper">
+                <!-- Coupons will show here -->
+            </div>
+        </div>
+
+        <!-- CARD 2: LANDING POPUP -->
+        <div class="card promo-card">
+            <div class="card-header-pro">
+                <i class="fas fa-bullhorn"></i>
+                <h3>Landing Page Popup</h3>
+            </div>
+            <p class="card-subtitle">Broadcast an announcement to all users</p>
+            
+            <div class="form-group-pro">
+                <label>Popup Title</label>
+                <input type="text" id="ann-title" placeholder="e.g. Sunday Special!">
+            </div>
+            <div class="form-group-pro">
+                <label>Popup Message</label>
+                <textarea id="ann-text" rows="3" placeholder="e.g. Get 50% OFF on all large pizzas today only."></textarea>
+            </div>
+            
+            <div class="toggle-container">
+                <label class="switch-ui">
+                    <input type="checkbox" id="ann-active">
+                    <span class="slider-ui"></span>
+                </label>
+                <span class="toggle-label">Enable Landing Popup?</span>
+            </div>
+            
+            <button class="primary-btn-pro" onclick="window.saveAnnouncement()">Update Announcement</button>
+        </div>
+
+    </div>
+</section>
+
+            <!-- SECTION: QR CODE -->
             <section id="qr-sec" class="page-sec" style="display:none; text-align:center;">
                 <div class="card">
-                    <h3>Your Digital Menu QR</h3>
+                    <h3>Download Print-Ready QR</h3>
                     <div id="qrcode-box" style="display:flex; justify-content:center; margin:30px;"></div>
-                    <button class="primary-btn" onclick="window.downloadQR()">Download Print-Ready QR</button>
+                    <button class="primary-btn" onclick="window.downloadQR()">Save QR Image</button>
                 </div>
             </section>
         </main>
@@ -318,9 +428,9 @@
                 <input type="number" id="edit-item-price" placeholder="Reg Price">
                 <input type="number" id="edit-item-priceM" placeholder="Med Price">
                 <input type="number" id="edit-item-priceL" placeholder="Large Price">
-                <textarea id="edit-item-ingredients" placeholder="Toppings" class="full-width"></textarea>
+                <textarea id="edit-item-ingredients" placeholder="Ingredients" class="full-width"></textarea>
             </div>
-            <button class="primary-btn" onclick="window.saveEditedItem()">Update Now</button>
+            <button class="primary-btn" onclick="window.saveEditedItem()">Update Item</button>
             <button class="btn-text" onclick="window.closeModal('editItemModal')">Cancel</button>
         </div>
     </div>
