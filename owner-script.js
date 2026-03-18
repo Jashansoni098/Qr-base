@@ -15,8 +15,10 @@ console.log("Platto Master Dashboard System Active...");
 const loader = document.getElementById('loader');
 const authArea = document.getElementById('auth-area');
 const mainWrapper = document.getElementById('main-wrapper');
+const orderSound = document.getElementById('order-alert-sound'); // ✅ Sound Variable
 
 let restaurantData = {};
+let isUserInRenewalProcess = false;
 let currentOrderTab = "Pending";
 let isLoginMode = true;
 let selectedPlanName = ""; 
@@ -73,6 +75,42 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+window.saveProfile = async () => {
+    if(!auth.currentUser) return;
+    showEl('loader', true);
+    
+    // Values ko number mein convert karke save karna zaroori hai
+    const upData = {
+        name: getV('res-name'),
+        ownerPhone: getV('res-phone'),
+        wifiName: getV('res-wifi-n'),
+        wifiPass: getV('res-wifi-p'),
+        minOrder: parseInt(getV('res-min-order')) || 0, // ✅ Delivery Min Order Fix
+        maxKM: parseInt(getV('res-max-km')) || 0,       // ✅ Delivery KM Fix
+        prepTime: getV('res-prep-time') || "20",
+        igLink: getV('res-ig'), 
+        fbLink: getV('res-fb'), 
+        ytLink: getV('res-yt'),
+        address: getV('res-address'), 
+        about: getV('res-about')
+    };
+
+    try {
+        const logo = document.getElementById('res-logo-file')?.files[0];
+        if(logo) {
+            const refL = ref(storage, `logos/${auth.currentUser.uid}`);
+            await uploadBytes(refL, logo);
+            upData.logoUrl = await getDownloadURL(refL);
+        }
+        
+        // Final Firestore Update
+        await updateDoc(doc(db, "restaurants", auth.currentUser.uid), upData);
+        alert("✅ Master Settings & Delivery Rules Saved!");
+    } catch (e) { 
+        alert("Save Error: " + e.message); 
+    }
+    hideLoader();
+};
 // Login / Signup Action
 document.getElementById('authBtn').onclick = async () => {
     const e = getV('email');
@@ -138,9 +176,23 @@ async function fetchAdminSettings() {
 }
 
 window.selectPlan = (name) => {
-    selectedPlanName = name;
-    setUI('payable-amt', platformPrices[name]);
-    showEl('payment-panel', true);
+    selectedPlanName = name; // Global variable
+    const price = platformPrices[name];
+
+    // logic 1: New Signup (Onboarding) ke liye
+    const onboardingPanel = document.getElementById('payment-panel');
+    if (onboardingPanel) {
+        setUI('payable-amt', price);
+        showEl('payment-panel', true);
+    } 
+    
+    // logic 2: Expired screen (Renewal) ke liye
+    const renewalPanel = document.getElementById('renewal-payment-panel');
+    if (renewalPanel) {
+        setUI('renewal-amt', price);
+        setUI('renewal-upi', adminUPI);
+        showEl('renewal-payment-panel', true);
+    }
 };
 
 window.applyMembershipCoupon = async () => {
@@ -205,22 +257,23 @@ function loadOrders(uid) {
         grid.innerHTML = "";
         
         let counts = { Pending: 0, Preparing: 0, Ready: 0, "Picked Up": 0 };
-
-        // New Order Sound Logic
-        snap.docChanges().forEach(change => {
-            if (change.type === "added" && change.doc.data().status === "Pending") {
-                const sound = document.getElementById('order-alert-sound');
-                if(sound) sound.play().catch(() => {});
-            }
-        });
+        let hasPendingOrder = false; // Sound control flag
 
         snap.forEach(d => {
             const o = d.data();
             if(counts[o.status] !== undefined) counts[o.status]++;
 
-            if(o.status === currentOrderTab || (currentOrderTab === 'Picked Up' && o.status === 'Picked Up')) {
+            // 1. SOUND LOGIC: Agar koi bhi order 'Pending' hai, toh flag true rahega
+            if(o.status === "Pending") hasPendingOrder = true;
+
+            // Filter logic: Current Tab ke orders dikhao
+            // Past Orders tab mein Picked Up aur Rejected orders dikhenge
+            const isHistoryTab = (currentOrderTab === 'Past Orders' || currentOrderTab === 'History');
+            const shouldShow = (o.status === currentOrderTab) || (isHistoryTab && (o.status === 'Picked Up' || o.status === 'Rejected'));
+
+            if(shouldShow) {
                 
-                // FIX: Map items with Variants/Extras
+                // 2. ITEM & VARIANT MAPPING (Quantity aur Extras/Toppings ke saath)
                 const itemsHtml = o.items.map(i => {
                     const extrasText = (i.extras && i.extras.length > 0) 
                         ? `<div style="color:#2563eb; font-size:0.75rem; margin-left:12px; font-weight:700;">+ ${i.extras.join(', ')}</div>` 
@@ -235,21 +288,32 @@ function loadOrders(uid) {
                     </div>`;
                 }).join('');
 
-                // Button Workflow logic
+                // 3. BUTTON WORKFLOW logic (Status ke hisab se badalna)
                 let btnAction = "";
-                if(o.status === "Pending") btnAction = `<button class="primary-btn" style="background:#22c55e" onclick="window.updateOrderStatus('${d.id}','Preparing')">Accept Order</button>`;
+                if(o.status === "Pending") btnAction = `<button class="primary-btn" style="background:#22c55e" onclick="window.updateOrderStatus('${d.id}','Preparing')">Accept Order & Stop Ring</button>`;
                 else if(o.status === "Preparing") btnAction = `<button class="primary-btn" style="background:#f59e0b" onclick="window.updateOrderStatus('${d.id}','Ready')">Mark Ready</button>`;
                 else if(o.status === "Ready") btnAction = `<button class="primary-btn" style="background:#3b82f6" onclick="window.updateOrderStatus('${d.id}','Picked Up')">Order Picked Up</button>`;
                 else if(o.status === "Picked Up") btnAction = `<button class="primary-btn" style="background:#64748b" onclick="window.updateOrderStatus('${d.id}','Done')">Archive Order</button>`;
 
+                // 4. DELIVERY ADDRESS vs TABLE Logic (Professional Header)
+                let headerHTML = o.orderType === "Delivery" 
+                    ? `<div style="background:#fff1f2; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid #e11d48; width:100%;">
+                        <small style="color:#e11d48; font-weight:800; text-transform:uppercase; font-size:0.6rem;">📍 Delivery Address:</small><br>
+                        <b style="font-size:0.85rem; line-height:1.4;">${o.address || "No Address Provided"}</b>
+                       </div>`
+                    : `<span class="badge" style="background:#f1f5f9; padding:5px 12px; border-radius:8px; font-weight:800; font-size:0.8rem;">🏠 Table ${o.table}</span>`;
+
                 grid.innerHTML += `
-                <div class="order-card" style="background:#fff; border-radius:20px; padding:20px; border:1px solid #e2e8f0; margin-bottom:20px; box-shadow: var(--shadow); text-align:left; border-left:6px solid var(--primary);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <span style="background:#f1f5f9; padding:4px 10px; border-radius:8px; font-weight:800; font-size:0.8rem;">Table ${o.table}</span>
-                        <span style="font-size:0.65rem; font-weight:800; color:var(--gray); text-transform:uppercase;">${o.paymentMode} | ${o.orderType}</span>
+                <div class="order-card" style="text-align:left; border-left:6px solid var(--primary); padding:20px; background:#fff; border-radius:20px; margin-bottom:20px; box-shadow: var(--shadow);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-direction:column; gap:5px;">
+                        ${headerHTML}
+                        <div style="display:flex; justify-content:space-between; width:100%; margin-top:5px;">
+                            <small style="font-weight:800; color:gray; text-transform:uppercase; font-size:0.65rem;">${o.paymentMode}</small>
+                            <small style="font-weight:800; color:var(--primary); text-transform:uppercase; font-size:0.65rem;">${o.orderType}</small>
+                        </div>
                     </div>
 
-                    <div style="margin-bottom:12px;">
+                    <div style="margin-bottom:12px; margin-top:10px;">
                         <h4 style="margin:0; font-size:1.1rem; color:var(--dark);">${o.customerName || 'Guest'}</h4>
                         <p style="margin:2px 0; font-size:0.85rem; color:#2563eb; font-weight:700;"><i class="fas fa-phone-alt"></i> ${o.customerPhone || 'N/A'}</p>
                     </div>
@@ -261,14 +325,23 @@ function loadOrders(uid) {
                         </div>
                     </div>
 
-                    ${o.instruction ? `<div style="background:#fff1f2; color:#e11d48; padding:10px; border-radius:10px; margin-top:12px; border-left:3px solid #e11d48; font-size:0.8rem;"><b>Chef Note:</b> ${o.instruction}</div>` : ''}
+                    ${o.instruction ? `<div style="background:#fffbeb; color:#92400e; padding:10px; border-radius:10px; margin-top:12px; border-left:3px solid #fde68a; font-size:0.8rem;"><b>Chef Note:</b> ${o.instruction}</div>` : ''}
 
                     <div style="margin-top:15px;">${btnAction}</div>
                 </div>`;
             }
         });
-        
-        // FIX: Update all 4 Badges properly
+
+        // 5. INFINITE RINGING LOGIC
+        if(hasPendingOrder && typeof orderSound !== 'undefined' && orderSound) {
+            orderSound.loop = true;
+            orderSound.play().catch(e => console.log("Interaction required for sound"));
+        } else if(typeof orderSound !== 'undefined' && orderSound) {
+            orderSound.pause();
+            orderSound.currentTime = 0;
+        }
+
+        // 6. UPDATE ALL 4 BADGES प्रॉपर्ली
         setUI('count-new', counts.Pending);
         setUI('count-prep', counts.Preparing);
         setUI('count-ready', counts.Ready);
@@ -530,6 +603,9 @@ function syncDashboard(data, uid) {
     setUI('disp-status', data.status.toUpperCase());
     setUI('disp-plan', data.plan);
     setUI('top-res-name', data.name);
+    setUI('exp-price-Monthly', platformPrices["Monthly"]);
+    setUI('exp-price-6-Months', platformPrices["6-Months"]);
+    setUI('exp-price-Yearly', platformPrices["Yearly"]);
     const fill = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ""; };
     fill('res-name', data.name); fill('res-phone', data.ownerPhone); fill('res-wifi-n', data.wifiName);
     fill('res-wifi-p', data.wifiPass); fill('res-min-order', data.minOrder); fill('res-max-km', data.maxKM);
@@ -682,7 +758,30 @@ window.showSection = (id) => {
 window.logout = () => signOut(auth).then(() => location.reload());
 window.deleteItem = async (id) => { if(confirm("Delete item?")) await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id)); };
 window.downloadQR = () => { const img = document.querySelector("#qrcode-box img"); if(img) { const link = document.createElement("a"); link.href = img.src; link.download = "QR.png"; link.click(); } };
+window.submitRenewalPayment = async () => {
+    const file = document.getElementById('renewal-proof').files[0];
+    if(!file) return alert("Please upload payment screenshot!");
 
+    showEl('loader', true);
+    try {
+        const sRef = ref(storage, `proofs/${auth.currentUser.uid}_${Date.now()}`);
+        await uploadBytes(sRef, file);
+        const url = await getDownloadURL(sRef);
+
+        // merge: true use kiya hai taaki purana menu delete na ho
+        await setDoc(doc(db, "restaurants", auth.currentUser.uid), {
+            paymentProof: url,
+            status: "pending", 
+            plan: selectedPlanName,
+            updatedAt: new Date()
+        }, { merge: true });
+
+        isUserInRenewalProcess = false; 
+        alert("Payment Submitted! Verification usually takes 1-2 hours.");
+        location.reload(); 
+    } catch (e) { alert(e.message); }
+    hideLoader();
+};
 // ==========================================
 // 1. ADVANCED COUPON LOGIC (ACTIVE/INACTIVE)
 // ==========================================

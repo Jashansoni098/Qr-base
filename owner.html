@@ -143,16 +143,59 @@
     </div>
 
     <!-- ==========================================
-       2. EXPIRED OVERLAY
-    ========================================== -->
-    <div id="expired-screen" class="expired-overlay" style="display:none;">
-        <div class="expired-card">
+      <!-- 2. EXPIRED OVERLAY (Direct Plans Integration) -->
+<!-- 2. EXPIRED OVERLAY (Full Complete Version) -->
+<div id="expired-screen" class="expired-overlay" style="display:none;">
+    <div class="expired-card-pro">
+        <!-- Header Section -->
+        <div class="expired-header">
+            <img src="https://cdn-icons-png.flaticon.com/512/564/564619.png" width="50">
             <h1>Plan Expired!</h1>
-            <p>Your subscription has ended. Please renew to continue.</p>
-            <button class="primary-btn" onclick="location.reload()">Renew Now</button>
+            <p>Your subscription has ended. Choose a plan below to resume services instantly.</p>
+        </div>
+
+        <!-- Membership Plans Selection -->
+        <div class="plans-grid-expired">
+            <div class="plan-card-mini" id="exp-card-Monthly" onclick="window.selectPlan('Monthly')">
+                <h4>Monthly</h4>
+                <b>₹<span id="exp-price-Monthly">---</span></b>
+            </div>
+            <div class="plan-card-mini featured" id="exp-card-6-Months" onclick="window.selectPlan('6-Months')">
+                <div class="badge-mini">Popular</div>
+                <h4>6 Months</h4>
+                <b>₹<span id="exp-price-6-Months">---</span></b>
+            </div>
+            <div class="plan-card-mini" id="exp-card-Yearly" onclick="window.selectPlan('Yearly')">
+                <h4>Yearly</h4>
+                <b>₹<span id="exp-price-Yearly">---</span></b>
+            </div>
+        </div>
+
+        <!-- Payment Area (Hidden until plan selected) -->
+        <div id="renewal-payment-panel" style="display:none; margin-top:20px; border-top:1px dashed #e2e8f0; padding-top:20px;">
+            <div class="payment-instruction">
+                <p>Pay ₹<b id="renewal-amt">0</b> to UPI:</p>
+                <h3 id="renewal-upi" style="color:var(--primary); margin:5px 0;">loading...</h3>
+            </div>
+            
+            <div style="text-align:left; margin-top:15px;">
+                <label style="font-size:0.75rem; font-weight:800; color:var(--gray);">UPLOAD PAYMENT SCREENSHOT:</label>
+                <input type="file" id="renewal-proof" accept="image/*" class="pro-input" style="margin-top:5px;">
+            </div>
+
+            <button class="primary-btn" onclick="window.submitRenewalPayment()" style="margin-top:10px;">
+                Submit for Approval
+            </button>
+        </div>
+        
+        <!-- Professional Logout Button (Fixed UI) -->
+        <div style="margin-top:20px; border-top:1px solid #f1f5f9; padding-top:10px;">
+            <button class="btn-logout-expired" onclick="window.logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout from Account
+            </button>
         </div>
     </div>
-
+</div>
     <!-- ==========================================
        3. MAIN MASTER DASHBOARD
     ========================================== -->

@@ -1476,3 +1476,91 @@ input:checked + .slider-ui-sm:before { transform: translateX(18px); }
     background: var(--primary) !important;
     transform: translateY(-2px);
 }
+.expired-card-pro {
+    background: white;
+    width: 95%;
+    max-width: 500px;
+    padding: 30px;
+    border-radius: 28px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.plans-grid-expired {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.plan-card-mini {
+    padding: 15px 10px;
+    border: 2px solid #f1f5f9;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.plan-card-mini.featured { border-color: var(--primary); background: #fff1f2; }
+.plan-card-mini h4 { margin: 0; font-size: 0.8rem; color: #64748b; }
+.plan-card-mini b { font-size: 1rem; color: var(--dark); }
+
+.badge-mini {
+    background: var(--primary);
+    color: white;
+    font-size: 0.5rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 5px;
+}
+/* ==========================================
+   RENEWAL SCREEN LOGOUT BUTTON
+   ========================================== */
+/* Expired Screen Layout */
+.expired-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6); /* Glass effect background */
+    backdrop-filter: blur(10px);
+    z-index: 9999; display: flex; justify-content: center; align-items: center;
+}
+
+.expired-card-pro {
+    background: white; width: 92%; max-width: 450px;
+    padding: 30px; border-radius: 30px; text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+/* Plans Grid in Popup */
+.plans-grid-expired {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px;
+}
+
+.plan-card-mini {
+    padding: 15px 5px; border: 2.5px solid #f1f5f9; border-radius: 18px;
+    cursor: pointer; transition: 0.3s;
+}
+
+.plan-card-mini:hover { border-color: var(--primary); }
+.plan-card-mini.featured { border-color: var(--primary); background: #fff1f2; }
+
+.plan-card-mini h4 { margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+.plan-card-mini b { font-size: 1rem; color: var(--dark); display: block; margin-top: 5px; }
+
+.badge-mini {
+    background: var(--primary); color: white; font-size: 0.55rem;
+    padding: 2px 8px; border-radius: 6px; font-weight: 800;
+    position: relative; top: -10px;
+}
+
+/* Professional Logout Button */
+.btn-logout-expired {
+    background: #f1f5f9; color: #64748b; border: none;
+    padding: 12px 20px; border-radius: 12px; font-weight: 700;
+    font-size: 0.85rem; cursor: pointer; transition: 0.3s;
+    display: inline-flex; align-items: center; gap: 8px;
+}
+
+.btn-logout-expired:hover {
+    background: #fee2e2; color: #ef4444;
+}
