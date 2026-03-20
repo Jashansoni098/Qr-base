@@ -54,6 +54,10 @@ onAuthStateChanged(auth, async (user) => {
                     loadAnnouncementHistory(user.uid)
                     generateQR(user.uid);
                     renderExtrasUI();
+                    if (Notification.permission !== "granted") {
+                       Notification.requestPermission();
+}
+// ... (baaki code same)
                 } else if (restaurantData.status === 'pending') {
                     showEl('auth-section', false);
                     showEl('membership-section', false);
@@ -757,7 +761,48 @@ window.showSection = (id) => {
 
 window.logout = () => signOut(auth).then(() => location.reload());
 window.deleteItem = async (id) => { if(confirm("Delete item?")) await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id)); };
-window.downloadQR = () => { const img = document.querySelector("#qrcode-box img"); if(img) { const link = document.createElement("a"); link.href = img.src; link.download = "QR.png"; link.click(); } };
+// ==========================================
+// FINAL FIXED DOWNLOAD QR FUNCTION
+// ==========================================
+window.downloadQR = () => {
+    const qrContainer = document.getElementById("qrcode-box");
+    
+    // 1. Check karein ki QR code hai ya nahi
+    if (!qrContainer || qrContainer.innerHTML === "") {
+        return alert("Pehle QR Code generate hone dein!");
+    }
+
+    // 2. QR Code ke andar ka Canvas ya Image dhoondhen
+    const canvas = qrContainer.querySelector("canvas");
+    const img = qrContainer.querySelector("img");
+
+    let qrImageURL = "";
+
+    if (canvas) {
+        // Agar library ne Canvas banaya hai
+        qrImageURL = canvas.toDataURL("image/png");
+    } else if (img) {
+        // Agar library ne direct Image banayi hai
+        qrImageURL = img.src;
+    } else {
+        return alert("QR Image nahi mili! Koshish karein page refresh karne ki.");
+    }
+
+    // 3. Download Logic
+    const downloadLink = document.createElement("a");
+    downloadLink.href = qrImageURL;
+    
+    // File ka naam (Restaurant Name ke saath)
+    const fileName = `${restaurantData.name || 'Platto'}_QR_Table_1.png`;
+    downloadLink.download = fileName;
+
+    // Trigger Download
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    console.log("QR Downloaded successfully as:", fileName);
+};
 window.submitRenewalPayment = async () => {
     const file = document.getElementById('renewal-proof').files[0];
     if(!file) return alert("Please upload payment screenshot!");
