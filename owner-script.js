@@ -761,48 +761,65 @@ window.showSection = (id) => {
 
 window.logout = () => signOut(auth).then(() => location.reload());
 window.deleteItem = async (id) => { if(confirm("Delete item?")) await deleteDoc(doc(db, "restaurants", auth.currentUser.uid, "menu", id)); };
+
 // ==========================================
-// FINAL FIXED DOWNLOAD QR FUNCTION
+// PROFESSIONAL QR DOWNLOAD WITH WHITE BORDER
 // ==========================================
 window.downloadQR = () => {
     const qrContainer = document.getElementById("qrcode-box");
     
-    // 1. Check karein ki QR code hai ya nahi
     if (!qrContainer || qrContainer.innerHTML === "") {
         return alert("Pehle QR Code generate hone dein!");
     }
 
-    // 2. QR Code ke andar ka Canvas ya Image dhoondhen
-    const canvas = qrContainer.querySelector("canvas");
-    const img = qrContainer.querySelector("img");
+    // 1. Asli QR code (Canvas ya Image) uthayein
+    const originalCanvas = qrContainer.querySelector("canvas");
+    const originalImg = qrContainer.querySelector("img");
 
-    let qrImageURL = "";
+    // 2. Ek naya temporary canvas banayein border ke liye
+    const finalCanvas = document.createElement("canvas");
+    const ctx = finalCanvas.getContext("2d");
 
-    if (canvas) {
-        // Agar library ne Canvas banaya hai
-        qrImageURL = canvas.toDataURL("image/png");
-    } else if (img) {
-        // Agar library ne direct Image banayi hai
-        qrImageURL = img.src;
+    const padding = 40; // Safaed border ka size (Ise aap kam-zyada kar sakte hain)
+    let qrWidth, qrHeight, qrSource;
+
+    if (originalCanvas) {
+        qrWidth = originalCanvas.width;
+        qrHeight = originalCanvas.height;
+        qrSource = originalCanvas;
+    } else if (originalImg) {
+        qrWidth = originalImg.naturalWidth;
+        qrHeight = originalImg.naturalHeight;
+        qrSource = originalImg;
     } else {
-        return alert("QR Image nahi mili! Koshish karein page refresh karne ki.");
+        return alert("QR Source nahi mila!");
     }
 
-    // 3. Download Logic
-    const downloadLink = document.createElement("a");
-    downloadLink.href = qrImageURL;
-    
-    // File ka naam (Restaurant Name ke saath)
-    const fileName = `${restaurantData.name || 'Platto'}_QR_Table_1.png`;
-    downloadLink.download = fileName;
+    // 3. Naye canvas ka size set karein (Original + Padding)
+    finalCanvas.width = qrWidth + (padding * 2);
+    finalCanvas.height = qrHeight + (padding * 2);
 
-    // Trigger Download
+    // 4. Poore background ko Safaed (White) rang se bhar dein
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+    // 5. Original QR Code ko center mein draw karein
+    ctx.drawImage(qrSource, padding, padding);
+
+    // 6. Final Image download karein
+    const downloadLink = document.createElement("a");
+    downloadLink.href = finalCanvas.toDataURL("image/png");
+    
+    const resName = restaurantData.name ? restaurantData.name.replace(/\s+/g, '_') : 'Platto';
+    downloadLink.download = `${resName}_Table_QR.png`;
+
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
 
-    console.log("QR Downloaded successfully as:", fileName);
+    console.log("Professional QR Downloaded with white border.");
 };
+//end here
 window.submitRenewalPayment = async () => {
     const file = document.getElementById('renewal-proof').files[0];
     if(!file) return alert("Please upload payment screenshot!");
