@@ -1564,3 +1564,15 @@ input:checked + .slider-ui-sm:before { transform: translateX(18px); }
 .btn-logout-expired:hover {
     background: #fee2e2; color: #ef4444;
 }
+.landing-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #f8fafc; z-index: 15000; /* Loader se bhi upar */
+    display: flex; justify-content: center; align-items: center;
+}
+.landing-card {
+    background: white; padding: 40px; border-radius: 30px;
+    text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    max-width: 350px; width: 90%;
+}
+.landing-card h2 { margin: 20px 0 10px; font-weight: 800; color: #0f172a; }
+.landing-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 30px; }

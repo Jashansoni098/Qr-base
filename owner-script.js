@@ -39,7 +39,7 @@ const hideLoader = () => { if(loader) loader.style.display = 'none'; };
 // ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        window.currentUID = user.uid; // Set Global UID for buttons
+        window.currentUID = user.uid;
         onSnapshot(doc(db, "restaurants", user.uid), (d) => {
             if (d.exists()) {
                 restaurantData = d.data();
@@ -51,20 +51,22 @@ onAuthStateChanged(auth, async (user) => {
                     loadMenu(user.uid);
                     loadOwnerTickets(user.uid);
                     loadCoupons(user.uid);
-                    loadAnnouncementHistory(user.uid)
+                    loadAnnouncementHistory(user.uid);
                     generateQR(user.uid);
                     renderExtrasUI();
-                    if (Notification.permission !== "granted") {
-                       Notification.requestPermission();
-}
-// ... (baaki code same)
+
+                    // --- SAFE NOTIFICATION PERMISSION ---
+                    if (typeof Notification !== 'undefined') {
+                        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                            Notification.requestPermission();
+                        }
+                    }
                 } else if (restaurantData.status === 'pending') {
                     showEl('auth-section', false);
                     showEl('membership-section', false);
                     showEl('waiting-section', true);
                 }
             } else {
-                // New signup flow: Show Plans
                 showEl('auth-section', false);
                 showEl('membership-section', true);
                 fetchAdminSettings(); 
@@ -261,23 +263,37 @@ function loadOrders(uid) {
         grid.innerHTML = "";
         
         let counts = { Pending: 0, Preparing: 0, Ready: 0, "Picked Up": 0 };
-        let hasPendingOrder = false; // Sound control flag
+        let hasPendingOrder = false;
+
+        // --- NEW ORDER NOTIFICATION LOGIC ---
+        snap.docChanges().forEach(change => {
+            if (change.type === "added") {
+                const newOrder = change.doc.data();
+                if (newOrder.status === "Pending") {
+                    hasPendingOrder = true;
+                    // Trigger Mobile Notification Safely
+                    if (typeof Notification !== 'undefined' && Notification.permission === "granted") {
+                        try {
+                            new Notification("🔔 New Order Received!", {
+                                body: (newOrder.orderType === "Delivery" ? "Delivery Order" : "Table " + newOrder.table) + " - ₹" + newOrder.total,
+                                icon: restaurantData.logoUrl || 'https://img.icons8.com/color/96/restaurant.png'
+                            });
+                        } catch (err) { console.log("Notification blocked"); }
+                    }
+                }
+            }
+        });
 
         snap.forEach(d => {
             const o = d.data();
             if(counts[o.status] !== undefined) counts[o.status]++;
 
-            // 1. SOUND LOGIC: Agar koi bhi order 'Pending' hai, toh flag true rahega
             if(o.status === "Pending") hasPendingOrder = true;
 
-            // Filter logic: Current Tab ke orders dikhao
-            // Past Orders tab mein Picked Up aur Rejected orders dikhenge
             const isHistoryTab = (currentOrderTab === 'Past Orders' || currentOrderTab === 'History');
             const shouldShow = (o.status === currentOrderTab) || (isHistoryTab && (o.status === 'Picked Up' || o.status === 'Rejected'));
 
             if(shouldShow) {
-                
-                // 2. ITEM & VARIANT MAPPING (Quantity aur Extras/Toppings ke saath)
                 const itemsHtml = o.items.map(i => {
                     const extrasText = (i.extras && i.extras.length > 0) 
                         ? `<div style="color:#2563eb; font-size:0.75rem; margin-left:12px; font-weight:700;">+ ${i.extras.join(', ')}</div>` 
@@ -292,60 +308,54 @@ function loadOrders(uid) {
                     </div>`;
                 }).join('');
 
-                // 3. BUTTON WORKFLOW logic (Status ke hisab se badalna)
                 let btnAction = "";
-                if(o.status === "Pending") btnAction = `<button class="primary-btn" style="background:#22c55e" onclick="window.updateOrderStatus('${d.id}','Preparing')">Accept Order & Stop Ring</button>`;
+                if(o.status === "Pending") btnAction = `<button class="primary-btn" style="background:#22c55e" onclick="window.updateOrderStatus('${d.id}','Preparing')">Accept Order</button>`;
                 else if(o.status === "Preparing") btnAction = `<button class="primary-btn" style="background:#f59e0b" onclick="window.updateOrderStatus('${d.id}','Ready')">Mark Ready</button>`;
                 else if(o.status === "Ready") btnAction = `<button class="primary-btn" style="background:#3b82f6" onclick="window.updateOrderStatus('${d.id}','Picked Up')">Order Picked Up</button>`;
                 else if(o.status === "Picked Up") btnAction = `<button class="primary-btn" style="background:#64748b" onclick="window.updateOrderStatus('${d.id}','Done')">Archive Order</button>`;
 
-                // 4. DELIVERY ADDRESS vs TABLE Logic (Professional Header)
                 let headerHTML = o.orderType === "Delivery" 
                     ? `<div style="background:#fff1f2; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid #e11d48; width:100%;">
                         <small style="color:#e11d48; font-weight:800; text-transform:uppercase; font-size:0.6rem;">📍 Delivery Address:</small><br>
-                        <b style="font-size:0.85rem; line-height:1.4;">${o.address || "No Address Provided"}</b>
+                        <b style="font-size:0.85rem; line-height:1.4;">${o.address || "No Address"}</b>
                        </div>`
-                    : `<span class="badge" style="background:#f1f5f9; padding:5px 12px; border-radius:8px; font-weight:800; font-size:0.8rem;">🏠 Table ${o.table}</span>`;
+                    : `<span class="badge" style="background:#f1f5f9; padding:4px 10px; border-radius:8px; font-weight:800; font-size:0.8rem;">🏠 Table ${o.table}</span>`;
 
                 grid.innerHTML += `
                 <div class="order-card" style="text-align:left; border-left:6px solid var(--primary); padding:20px; background:#fff; border-radius:20px; margin-bottom:20px; box-shadow: var(--shadow);">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-direction:column; gap:5px;">
                         ${headerHTML}
                         <div style="display:flex; justify-content:space-between; width:100%; margin-top:5px;">
-                            <small style="font-weight:800; color:gray; text-transform:uppercase; font-size:0.65rem;">${o.paymentMode}</small>
-                            <small style="font-weight:800; color:var(--primary); text-transform:uppercase; font-size:0.65rem;">${o.orderType}</small>
+                            <small style="font-weight:800; color:gray;">${o.paymentMode}</small>
+                            <small style="font-weight:800; color:var(--primary);">${o.orderType}</small>
                         </div>
                     </div>
-
                     <div style="margin-bottom:12px; margin-top:10px;">
-                        <h4 style="margin:0; font-size:1.1rem; color:var(--dark);">${o.customerName || 'Guest'}</h4>
+                        <h4 style="margin:0;">${o.customerName || 'Guest'}</h4>
                         <p style="margin:2px 0; font-size:0.85rem; color:#2563eb; font-weight:700;"><i class="fas fa-phone-alt"></i> ${o.customerPhone || 'N/A'}</p>
                     </div>
-
                     <div style="background:#f8fafc; padding:12px; border-radius:12px; border:1px solid #f1f5f9;">
                         ${itemsHtml}
                         <div style="display:flex; justify-content:space-between; font-weight:900; font-size:1.1rem; margin-top:10px; padding-top:10px; border-top:1.5px dashed #cbd5e1;">
                             <span>Total Bill:</span><span>₹${o.total}</span>
                         </div>
                     </div>
-
-                    ${o.instruction ? `<div style="background:#fffbeb; color:#92400e; padding:10px; border-radius:10px; margin-top:12px; border-left:3px solid #fde68a; font-size:0.8rem;"><b>Chef Note:</b> ${o.instruction}</div>` : ''}
-
+                    ${o.instruction ? `<div style="background:#fffbeb; color:#92400e; padding:10px; border-radius:10px; margin-top:12px; border-left:3px solid #fde68a; font-size:0.8rem;"><b>Note:</b> ${o.instruction}</div>` : ''}
                     <div style="margin-top:15px;">${btnAction}</div>
                 </div>`;
             }
         });
 
-        // 5. INFINITE RINGING LOGIC
-        if(hasPendingOrder && typeof orderSound !== 'undefined' && orderSound) {
+        // Infinite Ringing logic
+        const orderSound = document.getElementById('order-alert-sound');
+        if(hasPendingOrder && orderSound) {
             orderSound.loop = true;
-            orderSound.play().catch(e => console.log("Interaction required for sound"));
-        } else if(typeof orderSound !== 'undefined' && orderSound) {
+            orderSound.play().catch(e => console.log("Interaction required"));
+        } else if(orderSound) {
             orderSound.pause();
             orderSound.currentTime = 0;
         }
 
-        // 6. UPDATE ALL 4 BADGES प्रॉपर्ली
         setUI('count-new', counts.Pending);
         setUI('count-prep', counts.Preparing);
         setUI('count-ready', counts.Ready);
@@ -990,4 +1000,25 @@ function loadOwnerTickets(uid) {
 }
 
 async function init() { await fetchAdminSettings(); }
-init();
+// owner-script.js ke bilkul aakhir mein ye badlav karein
+
+window.enterDashboard = () => {
+    // 1. Landing screen ko hide karein
+    document.getElementById('landing-screen').style.display = 'none';
+    
+    // 2. Dashboard initialize karein
+    console.log("Dashboard wake-up signal received...");
+    showEl('loader', true);
+    
+    // Aapka purana init code yahan aayega
+    init(); 
+    
+    // Sound test (Chrome/WebView ko permission dene ke liye)
+    const sound = document.getElementById('order-alert-sound');
+    if(sound) {
+        sound.muted = true;
+        sound.play().then(() => { sound.pause(); sound.muted = false; });
+    }
+};
+
+// ZAROORI: Ab file ke aakhir se init(); hata dein, sirf window.enterDashboard rahega.
