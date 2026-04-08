@@ -17,12 +17,14 @@ const authArea = document.getElementById('auth-area');
 const mainWrapper = document.getElementById('main-wrapper');
 const orderSound = document.getElementById('order-alert-sound'); // ✅ Sound Variable
 
+let isDashboardReady = false;
 let restaurantData = {};
 let isUserInRenewalProcess = false;
 let currentOrderTab = "Pending";
 let isLoginMode = true;
 let selectedPlanName = ""; 
 let activeMenuFilter = ""; 
+let isSettingsLoaded = false;
 
 let platformPrices = { "Monthly": 0, "6-Months": 0, "Yearly": 0 };
 let adminUPI = "";
@@ -37,15 +39,26 @@ const hideLoader = () => { if(loader) loader.style.display = 'none'; };
 // ==========================================
 // 2. AUTHENTICATION & STATE CONTROLLER
 // ==========================================
+// ==========================================
+// 2. AUTHENTICATION & STATE CONTROLLER (FIXED)
+// ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        window.currentUID = user.uid;
+        window.currentUID = user.uid; // Set Global UID for buttons
+        console.log("Session Active:", user.email);
+
+        // Real-time listener for Restaurant Status
         onSnapshot(doc(db, "restaurants", user.uid), (d) => {
             if (d.exists()) {
                 restaurantData = d.data();
-                if (restaurantData.status === 'active' || restaurantData.status === 'expired') {
+                const status = restaurantData.status;
+
+                if (status === 'active' || status === 'expired') {
+                    // --- 1. APPROVED / ACTIVE STATE ---
                     showEl('auth-area', false);
-                    showFlex('main-wrapper');
+                    showFlex('main-wrapper', true);
+                    
+                    // Sync and Load Data
                     syncDashboard(restaurantData, user.uid);
                     loadOrders(user.uid);
                     loadMenu(user.uid);
@@ -55,27 +68,41 @@ onAuthStateChanged(auth, async (user) => {
                     generateQR(user.uid);
                     renderExtrasUI();
 
-                    // --- SAFE NOTIFICATION PERMISSION ---
-                    if (typeof Notification !== 'undefined') {
-                        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                            Notification.requestPermission();
-                        }
+                    // Notification Permission (One-time ask)
+                    if (typeof Notification !== 'undefined' && Notification.permission === "default") {
+                        Notification.requestPermission();
                     }
-                } else if (restaurantData.status === 'pending') {
+                } else if (status === 'pending') {
+                    // --- 2. PAYMENT SUBMITTED BUT WAITING ---
+                    showEl('auth-area', true);
                     showEl('auth-section', false);
                     showEl('membership-section', false);
                     showEl('waiting-section', true);
+                    showEl('main-wrapper', false);
                 }
             } else {
+                // --- 3. NEW USER (SHOW PLANS) ---
+                showEl('auth-area', true);
                 showEl('auth-section', false);
+                showEl('waiting-section', false);
                 showEl('membership-section', true);
-                fetchAdminSettings(); 
+                showEl('main-wrapper', false);
+                
+                // Fetch Admin Prices (if not already loaded)
+                if(typeof fetchAdminSettings === 'function') fetchAdminSettings(); 
             }
             hideLoader();
-        }, (err) => { console.error(err); hideLoader(); });
+        }, (err) => { 
+            console.error("Snapshot Error:", err); 
+            hideLoader(); 
+        });
+
     } else {
+        // --- 4. LOGGED OUT STATE ---
         showEl('auth-area', true);
         showEl('auth-section', true);
+        showEl('membership-section', false);
+        showEl('waiting-section', false);
         showEl('main-wrapper', false);
         hideLoader();
     }
@@ -138,16 +165,20 @@ window.toggleAuth = () => {
 };
 
 // ==========================================
-// 3. MEMBERSHIP & ADMIN SETTINGS SYNC
-// ==========================================
+// 2. Updated function with Lock and Safety
 async function fetchAdminSettings() {
-    console.log("Fetching Admin Settings..."); // Debugging ke liye
+    // Agar ek baar load ho chuka hai, toh dubara mat chalao (Loop Fix)
+    if (isSettingsLoaded) return; 
+    
+    console.log("Fetching Admin Settings..."); 
+    isSettingsLoaded = true; // Lock laga diya
+
     try {
         const snap = await getDoc(doc(db, "platform", "settings"));
         if(snap.exists()) {
             const s = snap.data();
             
-            // 1. Global prices update karein
+            // Global prices update
             platformPrices = { 
                 "Monthly": s.priceMonthly || 499, 
                 "6-Months": s.price6Months || 2499, 
@@ -156,27 +187,27 @@ async function fetchAdminSettings() {
             
             adminUPI = s.adminUpi || "platto@okaxis";
 
-            // 2. UI mein Prices update karein
+            // UI Updates
             setUI('display-price-Monthly', platformPrices["Monthly"]);
             setUI('display-price-6-Months', platformPrices["6-Months"]);
             setUI('display-price-Yearly', platformPrices["Yearly"]);
-            
-            // 3. Admin UPI update karein
             setUI('admin-upi-display', adminUPI);
 
-            // ✅ 4. FIX: PROMO BANNER LOGIC
+            // Promo Banner Logic (Safe checks)
             const banner = document.getElementById('promo-banner');
             const bannerText = document.getElementById('promo-banner-text');
 
-            // Agar Admin ne banner mein kuch likha hai, toh hi dikhao
             if(s.promoBanner && s.promoBanner.trim() !== "") {
-                if(banner) banner.style.display = "flex"; // Banner show karein
-                if(bannerText) bannerText.innerText = s.promoBanner; // Text set karein
+                if(banner) banner.style.display = "flex"; 
+                if(bannerText) bannerText.innerText = s.promoBanner;
             } else {
-                if(banner) banner.style.display = "none"; // Khali hone par hide karein
+                if(banner) banner.style.display = "none";
             }
+            
+            console.log("✅ Admin Settings Synced Successfully.");
         }
     } catch(e) { 
+        isSettingsLoaded = false; // Error aaye toh lock khol do taaki retry ho sake
         console.error("Admin sync error:", e); 
     }
 }
@@ -999,26 +1030,62 @@ function loadOwnerTickets(uid) {
     });
 }
 
-async function init() { await fetchAdminSettings(); }
-// owner-script.js ke bilkul aakhir mein ye badlav karein
+// ==========================================
+// 1. INITIALIZATION (Admin Settings)
+// ==========================================
+async function init() {
+    console.log("Fetching Admin Settings...");
+    try {
+        await fetchAdminSettings(); 
+        // Note: Dashboard Sync 'onAuthStateChanged' handle kar raha hai
+    } catch (e) {
+        console.error("Init error:", e);
+    }
+}
 
+// ==========================================
+// 2. GO TO DASHBOARD BUTTON (UI FIX)
+// ==========================================
 window.enterDashboard = () => {
     // 1. Landing screen ko hide karein
-    document.getElementById('landing-screen').style.display = 'none';
+    const landing = document.getElementById('landing-screen');
+    if(landing) landing.style.display = 'none';
     
-    // 2. Dashboard initialize karein
     console.log("Dashboard wake-up signal received...");
     showEl('loader', true);
+
+    // 2. IMPORTANT: UI Switch Logic
+    // Yeh check karega ki aap Approved ho, Pending ho ya Naye user ho
+    if (auth.currentUser) {
+        if (restaurantData && (restaurantData.status === 'active' || restaurantData.status === 'expired')) {
+            showEl('auth-area', false);
+            showFlex('main-wrapper', true); // Approved Dashboard dikhayein
+        } else if (restaurantData && restaurantData.status === 'pending') {
+            showEl('auth-section', false);
+            showEl('waiting-section', true); // Waiting screen dikhayein
+        } else {
+            showEl('auth-section', false);
+            showEl('membership-section', true); // Plans dikhayein
+        }
+    } else {
+        // Agar login hi nahi hai
+        showEl('auth-area', true);
+        showEl('auth-section', true);
+    }
     
-    // Aapka purana init code yahan aayega
+    // 3. Background Data Sync chalu karein
     init(); 
     
-    // Sound test (Chrome/WebView ko permission dene ke liye)
+    // 4. Sound test (Browser permission fix)
     const sound = document.getElementById('order-alert-sound');
     if(sound) {
         sound.muted = true;
-        sound.play().then(() => { sound.pause(); sound.muted = false; });
+        sound.play().then(() => { 
+            sound.pause(); 
+            sound.muted = false; 
+        }).catch(() => console.log("Sound permission granted."));
     }
-};
 
-// ZAROORI: Ab file ke aakhir se init(); hata dein, sirf window.enterDashboard rahega.
+    // 5. FAIL-SAFE: 3 second mein loader hata do agar logic atak gaya ho
+    setTimeout(hideLoader, 3000);
+};
