@@ -44,21 +44,23 @@ const hideLoader = () => { if(loader) loader.style.display = 'none'; };
 // ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        window.currentUID = user.uid; // Set Global UID for buttons
+        window.currentUID = user.uid; // Global UID set karein
         console.log("Session Active:", user.email);
 
-        // Real-time listener for Restaurant Status
         onSnapshot(doc(db, "restaurants", user.uid), (d) => {
+            const authAreaEl = document.getElementById('auth-area');
+            const mainWrapperEl = document.getElementById('main-wrapper');
+
             if (d.exists()) {
                 restaurantData = d.data();
                 const status = restaurantData.status;
 
                 if (status === 'active' || status === 'expired') {
-                    // --- 1. APPROVED / ACTIVE STATE ---
-                    showEl('auth-area', false);
-                    showFlex('main-wrapper', true);
+                    // --- 1. APPROVED / ACTIVE STATE (FORCE SWITCH) ---
+                    if(authAreaEl) authAreaEl.style.setProperty('display', 'none', 'important');
+                    if(mainWrapperEl) mainWrapperEl.style.setProperty('display', 'flex', 'important');
                     
-                    // Sync and Load Data
+                    // Saare dashboard functions load karein
                     syncDashboard(restaurantData, user.uid);
                     loadOrders(user.uid);
                     loadMenu(user.uid);
@@ -68,27 +70,28 @@ onAuthStateChanged(auth, async (user) => {
                     generateQR(user.uid);
                     renderExtrasUI();
 
-                    // Notification Permission (One-time ask)
+                    // Mobile Notification Permission
                     if (typeof Notification !== 'undefined' && Notification.permission === "default") {
                         Notification.requestPermission();
                     }
                 } else if (status === 'pending') {
-                    // --- 2. PAYMENT SUBMITTED BUT WAITING ---
-                    showEl('auth-area', true);
+                    // --- 2. PAYMENT SUBMITTED (SHOW WAITING SCREEN) ---
+                    if(authAreaEl) authAreaEl.style.display = 'block';
+                    if(mainWrapperEl) mainWrapperEl.style.display = 'none';
+                    
                     showEl('auth-section', false);
                     showEl('membership-section', false);
                     showEl('waiting-section', true);
-                    showEl('main-wrapper', false);
                 }
             } else {
                 // --- 3. NEW USER (SHOW PLANS) ---
-                showEl('auth-area', true);
+                if(authAreaEl) authAreaEl.style.display = 'block';
+                if(mainWrapperEl) mainWrapperEl.style.display = 'none';
+
                 showEl('auth-section', false);
                 showEl('waiting-section', false);
                 showEl('membership-section', true);
-                showEl('main-wrapper', false);
                 
-                // Fetch Admin Prices (if not already loaded)
                 if(typeof fetchAdminSettings === 'function') fetchAdminSettings(); 
             }
             hideLoader();
@@ -98,12 +101,16 @@ onAuthStateChanged(auth, async (user) => {
         });
 
     } else {
-        // --- 4. LOGGED OUT STATE ---
-        showEl('auth-area', true);
+        // --- 4. LOGGED OUT STATE (SHOW LOGIN) ---
+        const authAreaEl = document.getElementById('auth-area');
+        const mainWrapperEl = document.getElementById('main-wrapper');
+        
+        if(authAreaEl) authAreaEl.style.display = 'block';
+        if(mainWrapperEl) mainWrapperEl.style.display = 'none';
+
         showEl('auth-section', true);
         showEl('membership-section', false);
         showEl('waiting-section', false);
-        showEl('main-wrapper', false);
         hideLoader();
     }
 });
